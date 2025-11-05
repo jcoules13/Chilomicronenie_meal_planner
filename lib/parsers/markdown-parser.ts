@@ -41,7 +41,7 @@ export function parseAlimentMarkdown(
     const aliment: Aliment = {
       id: generateId(),
       nom: frontmatter.nom,
-      categorie: parseCategorie(frontmatter.categorie, warnings),
+      categorie: parseCategorie(frontmatter.categorie, body, warnings),
       saison: parseSaison(frontmatter.saison, warnings),
       compatible_chylomicronemie: parseCompatibilite(
         frontmatter.compatible_chylomicronemie,
@@ -256,8 +256,9 @@ function extractSection(content: string, sectionTitle: string): string | undefin
 
 /**
  * Parse la catégorie avec valeur par défaut
+ * Gère singulier/pluriel et extraction depuis contenu si absent du frontmatter
  */
-function parseCategorie(value: any, warnings: string[]): CategorieAliment {
+function parseCategorie(value: any, content: string, warnings: string[]): CategorieAliment {
   const categories: CategorieAliment[] = [
     "Légumes",
     "Protéines",
@@ -273,17 +274,90 @@ function parseCategorie(value: any, warnings: string[]): CategorieAliment {
     "Autres",
   ];
 
-  if (!value) {
-    warnings.push("Catégorie manquante, définie sur 'Autres'");
-    return "Autres";
+  // Mapping singulier → pluriel
+  const singularToPlural: Record<string, CategorieAliment> = {
+    "Légume": "Légumes",
+    "Protéine": "Protéines",
+    "Féculent": "Féculents",
+    "Fruit": "Fruits",
+    "Aromate": "Aromates",
+    "Condiment": "Condiments",
+    "Produit laitier": "Produits laitiers",
+    "Noix": "Noix et graines",
+    "Graine": "Noix et graines",
+    "Légumineuse": "Légumineuses",
+    "Huile": "Huiles et matières grasses",
+    "Matière grasse": "Huiles et matières grasses",
+    "Boisson": "Boissons",
+    // Aliases courants
+    "Poisson": "Protéines",
+    "Poisson gras": "Protéines",
+    "Poisson maigre": "Protéines",
+    "Viande": "Protéines",
+    "Viande maigre": "Protéines",
+    "Viande rouge": "Protéines",
+    "Volaille": "Protéines",
+    "Œuf": "Protéines",
+    "Oeufs": "Protéines",
+    "Légume racine": "Légumes",
+    "Légume feuille": "Légumes",
+    "Légume vert": "Légumes",
+  };
+
+  // 1. Si pas de valeur dans frontmatter, extraire du contenu
+  if (!value || value.trim() === "") {
+    const extracted = extractCategorieFromContent(content);
+    if (extracted) {
+      value = extracted;
+    } else {
+      warnings.push("Catégorie manquante dans frontmatter et contenu, définie sur 'Autres'");
+      return "Autres";
+    }
   }
 
-  if (categories.includes(value)) {
-    return value;
+  // 2. Nettoyer la valeur (trim, gérer les slashes)
+  let cleanValue = String(value).trim();
+
+  // Si slash "/" présent, prendre la première catégorie
+  if (cleanValue.includes("/")) {
+    const parts = cleanValue.split("/").map(p => p.trim());
+    cleanValue = parts[0];
+    warnings.push(`Catégorie multiple détectée ('${value}'), seule '${cleanValue}' a été conservée`);
   }
 
+  // 3. Vérifier si c'est déjà une catégorie valide (pluriel)
+  if (categories.includes(cleanValue as CategorieAliment)) {
+    return cleanValue as CategorieAliment;
+  }
+
+  // 4. Vérifier si c'est un singulier connu
+  if (singularToPlural[cleanValue]) {
+    return singularToPlural[cleanValue];
+  }
+
+  // 5. Essayer une correspondance insensible à la casse
+  const lowerValue = cleanValue.toLowerCase();
+  for (const [singular, plural] of Object.entries(singularToPlural)) {
+    if (singular.toLowerCase() === lowerValue) {
+      return plural;
+    }
+  }
+
+  // 6. Si rien ne correspond, défaut à "Autres"
   warnings.push(`Catégorie '${value}' inconnue, définie sur 'Autres'`);
   return "Autres";
+}
+
+/**
+ * Extrait la catégorie depuis le contenu Markdown (si absent du frontmatter)
+ */
+function extractCategorieFromContent(content: string): string | null {
+  // Chercher "**Catégorie** : XXX" ou "Catégorie : XXX"
+  const match = content.match(/\*?\*?Catégorie\*?\*?\s*:\s*(.+)/i);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return null;
 }
 
 /**
