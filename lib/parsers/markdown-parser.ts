@@ -362,6 +362,7 @@ function extractCategorieFromContent(content: string): string | null {
 
 /**
  * Parse la saison avec valeur par défaut
+ * Gère aussi les saisons composées comme "Automne-Hiver" ou "Printemps-Été"
  */
 function parseSaison(value: any, warnings: string[]): Saison[] {
   if (!value) {
@@ -369,9 +370,23 @@ function parseSaison(value: any, warnings: string[]): Saison[] {
     return ["Toute année"];
   }
 
-  // Si c'est une string, la convertir en array
+  // Si c'est une string
   if (typeof value === "string") {
-    return [value as Saison];
+    const cleanValue = value.trim();
+
+    // Gérer les saisons composées avec tiret (ex: "Automne-Hiver")
+    if (cleanValue.includes("-")) {
+      const parts = cleanValue.split("-").map(s => s.trim() as Saison);
+      return parts;
+    }
+
+    // Gérer les saisons composées avec virgule (ex: "Automne, Hiver")
+    if (cleanValue.includes(",")) {
+      const parts = cleanValue.split(",").map(s => s.trim() as Saison);
+      return parts;
+    }
+
+    return [cleanValue as Saison];
   }
 
   // Si c'est déjà un array
@@ -397,16 +412,40 @@ function parseCompatibilite(
     "DECONSEILLE",
   ];
 
+  // Mapping des valeurs alternatives
+  const aliasMapping: Record<string, CompatibilitePathologie> = {
+    "ATTENTION": "MODERE",
+    "PRUDENCE": "MODERE",
+    "MODÉRÉ": "MODERE", // Avec accent
+    "MOYEN": "MODERE",
+    "DÉCONSEILLÉ": "DECONSEILLE", // Avec accent
+    "ÉVITER": "DECONSEILLE",
+    "EVITER": "DECONSEILLE",
+    "INTERDIT": "DECONSEILLE",
+    "TRES BON": "BON",
+    "TRÈS BON": "BON",
+    "PARFAIT": "EXCELLENT",
+    "OPTIMAL": "EXCELLENT",
+  };
+
   if (!value) {
     warnings.push("Compatibilité chylomicronémie manquante, définie sur 'BON'");
     return "BON";
   }
 
-  const upperValue = String(value).toUpperCase();
+  const upperValue = String(value).toUpperCase().trim();
+
+  // 1. Vérifier si c'est une valeur valide directement
   if (validValues.includes(upperValue as CompatibilitePathologie)) {
     return upperValue as CompatibilitePathologie;
   }
 
+  // 2. Vérifier si c'est un alias connu
+  if (aliasMapping[upperValue]) {
+    return aliasMapping[upperValue];
+  }
+
+  // 3. Sinon, défaut à BON avec warning
   warnings.push(
     `Compatibilité '${value}' invalide, définie sur 'BON'`
   );
