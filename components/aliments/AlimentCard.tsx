@@ -4,7 +4,7 @@ import { Aliment } from "@/types/aliment";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCompatibilityBadge, getCategorieIG, formatMacros } from "@/lib/utils/aliment-helpers";
+import { getCompatibilityBadge, getCategorieIG } from "@/lib/utils/aliment-helpers";
 import { cn } from "@/lib/utils";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -65,12 +65,23 @@ export function AlimentCard({ aliment, onDelete }: AlimentCardProps) {
               {aliment.valeurs_nutritionnelles_100g.energie_kcal} kcal
             </span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {formatMacros(
-              aliment.valeurs_nutritionnelles_100g.proteines_g,
-              aliment.valeurs_nutritionnelles_100g.lipides_g,
-              aliment.valeurs_nutritionnelles_100g.glucides_g
-            )}
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Protéines</span>
+            <span className="font-medium">
+              {aliment.valeurs_nutritionnelles_100g.proteines_g}g
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Lipides</span>
+            <span className="font-medium">
+              {aliment.valeurs_nutritionnelles_100g.lipides_g}g
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Glucides</span>
+            <span className="font-medium">
+              {aliment.valeurs_nutritionnelles_100g.glucides_g}g
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Fibres</span>
