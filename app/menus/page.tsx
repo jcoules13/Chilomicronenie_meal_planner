@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { MenuCard } from "@/components/menus/MenuCard";
 import { MenuFilters } from "@/components/menus/MenuFilters";
 import { useMenus } from "@/hooks/useMenus";
-import { Upload, Search, RefreshCw } from "lucide-react";
+import { Upload, Search, RefreshCw, Wand2 } from "lucide-react";
 import Link from "next/link";
 
 export default function MenusPage() {
@@ -75,6 +75,12 @@ export default function MenusPage() {
 
             {/* Boutons d'action */}
             <div className="flex gap-2">
+              <Link href="/menus/generer">
+                <Button>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Générer des menus
+                </Button>
+              </Link>
               <Button
                 onClick={handleLoadFromMarkdown}
                 disabled={isLoadingMarkdown}

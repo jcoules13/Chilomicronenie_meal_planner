@@ -328,27 +328,51 @@ export default function GenererMenusPage() {
                       </div>
                     </div>
 
-                    {/* Aperçu repas */}
+                    {/* Aperçu repas détaillé avec quantités */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="p-2 bg-amber-50 dark:bg-amber-950/20 rounded">
-                        <div className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded">
+                        <div className="font-medium text-amber-900 dark:text-amber-100 mb-2">
                           {menu.repas_1.nom} ({menu.repas_1.heure})
+                          <span className="ml-2 text-xs font-normal">
+                            {menu.repas_1.calories_cibles} kcal
+                          </span>
                         </div>
-                        <ul className="text-xs space-y-1 text-muted-foreground">
-                          {menu.repas_1.composants.map((comp, i) => (
-                            <li key={i}>• {comp.nom}: {comp.description}</li>
-                          ))}
-                        </ul>
+                        {menu.repas_1.composants.map((comp, i) => (
+                          <div key={i} className="mb-2">
+                            <div className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+                              {comp.nom} ({comp.calories || 0} kcal)
+                            </div>
+                            <ul className="text-xs space-y-0.5 text-muted-foreground pl-3">
+                              {comp.ingredients.map((ing, j) => (
+                                <li key={j}>
+                                  - {ing.nom}: <span className="font-medium">{ing.quantite}{ing.unite}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
                       </div>
-                      <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
-                        <div className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded">
+                        <div className="font-medium text-blue-900 dark:text-blue-100 mb-2">
                           {menu.repas_2.nom} ({menu.repas_2.heure})
+                          <span className="ml-2 text-xs font-normal">
+                            {menu.repas_2.calories_cibles} kcal
+                          </span>
                         </div>
-                        <ul className="text-xs space-y-1 text-muted-foreground">
-                          {menu.repas_2.composants.map((comp, i) => (
-                            <li key={i}>• {comp.nom}: {comp.description}</li>
-                          ))}
-                        </ul>
+                        {menu.repas_2.composants.map((comp, i) => (
+                          <div key={i} className="mb-2">
+                            <div className="text-xs font-semibold text-blue-800 dark:text-blue-200">
+                              {comp.nom} ({comp.calories || 0} kcal)
+                            </div>
+                            <ul className="text-xs space-y-0.5 text-muted-foreground pl-3">
+                              {comp.ingredients.map((ing, j) => (
+                                <li key={j}>
+                                  - {ing.nom}: <span className="font-medium">{ing.quantite}{ing.unite}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

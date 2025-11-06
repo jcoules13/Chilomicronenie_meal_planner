@@ -193,6 +193,34 @@ _Aucun bug détecté pour le moment_
 
 ## 🔄 CHANGELOG
 
+### 2025-11-06 (Session 3) - Corrections suite retours utilisateur
+- 🔬 Recherche scientifique : Recommandations protéines validées sur 3 sources (2024-2025)
+  - Meta-analyses: 1.6-2.7 g/kg pour perte poids + préservation musculaire
+  - ISSN/NSCA: 1.6-2.0 g/kg pour athlètes et anciens sportifs
+  - ADA 2024: 1.5-2.0 g/kg pour diabétiques type 2 en perte de poids
+- ✅ Correction calculs macros profil (lib/utils/profile-calculations.ts)
+  - **AVANT**: Protéines = 18% des calories (~95g pour 2100 kcal) ❌
+  - **APRÈS**: Protéines = 1.6-2.0 g/kg selon objectif ✅
+    - PERTE_POIDS: 1.6 g/kg = 160g pour 100kg
+    - MAINTIEN: 1.6 g/kg = 160g pour 100kg
+    - PRISE_MASSE: 2.0 g/kg = 200g pour 100kg
+  - Glucides recalculés en conséquence (quantités adaptées pour diabétique)
+- ✅ Navigation améliorée
+  - Ajout bouton "Générer des menus" sur page /menus
+  - Icône baguette magique (Wand2) pour identification visuelle
+- ✅ Affichage détaillé proportions dans menus générés
+  - Quantités précises par ingrédient (ex: Poulet: 200g, Lentilles: 80g)
+  - Calories par composant affichées
+  - Totaux caloriques par repas visibles
+- ✅ Page liste de courses interactive (/courses)
+  - Génération automatique depuis menus sauvegardés
+  - Checkboxes pour cocher items dans le caddie
+  - Sauvegarde état dans localStorage
+  - Barre de progression (X/Y items, %)
+  - Regroupement par catégories avec emojis
+  - Boutons: Actualiser, Télécharger MD, Tout décocher
+  - Items barrés quand cochés + opacité réduite
+
 ### 2025-11-06 (Session 2)
 - ✅ Phase 4 COMPLÈTE : Générateur de menus (100%)
   - ✅ Export Markdown : Génération fichiers .md compatibles avec menus manuels

@@ -164,8 +164,16 @@ export function determinerZoneTG(niveau_tg_g_l: number): {
  *
  * Pour la chylomicronémie :
  * - Lipides : Limite STRICTE en grammes selon niveau TG (10-20g/jour max)
- * - Protéines : 15-20% des calories
+ * - Protéines : Basé sur le poids corporel et l'objectif (1.6-2.0 g/kg)
+ *   - PERTE_POIDS: 1.6 g/kg (préservation musculaire maximale)
+ *   - MAINTIEN: 1.6 g/kg (maintien de la masse musculaire)
+ *   - PRISE_MASSE: 2.0 g/kg (croissance musculaire optimale)
  * - Glucides : Complète le reste des besoins énergétiques
+ *
+ * Sources scientifiques (2024-2025):
+ * - Meta-analyses: 1.6-2.7 g/kg pour perte de poids avec préservation musculaire
+ * - ISSN/NSCA: 1.6-2.0 g/kg pour athlètes et anciens sportifs
+ * - ADA 2024: 1.5-2.0 g/kg pour diabétiques type 2 en perte de poids
  *
  * Conversion :
  * - 1g de lipides = 9 kcal
@@ -174,6 +182,8 @@ export function determinerZoneTG(niveau_tg_g_l: number): {
  */
 export function calculerMacros(
   besoins_kcal: number,
+  poids_kg: number,
+  objectif: ObjectifSante,
   avec_chylomicronemie: boolean = false,
   limite_lipides_max_g?: number
 ): { proteines_g: number; lipides_g: number; glucides_g: number } {
@@ -183,33 +193,79 @@ export function calculerMacros(
     const lipides_g = limite_lipides_max_g;
     const kcal_lipides = lipides_g * 9;
 
-    // Protéines : 18% des calories totales
-    const proteines_pct = 0.18;
-    const proteines_g = Math.round((besoins_kcal * proteines_pct) / 4);
+    // Protéines : Basées sur le POIDS CORPOREL et l'OBJECTIF (recommandations 2024)
+    let proteines_g_par_kg: number;
+    switch (objectif) {
+      case "PERTE_POIDS":
+        proteines_g_par_kg = 1.6; // Préservation musculaire en déficit calorique
+        break;
+      case "MAINTIEN":
+        proteines_g_par_kg = 1.6; // Maintien de la masse musculaire
+        break;
+      case "PRISE_MASSE":
+        proteines_g_par_kg = 2.0; // Croissance musculaire optimale
+        break;
+      default:
+        proteines_g_par_kg = 1.6;
+    }
+
+    const proteines_g = Math.round(poids_kg * proteines_g_par_kg);
     const kcal_proteines = proteines_g * 4;
 
     // Glucides : Complète le reste des besoins
     const kcal_glucides = besoins_kcal - kcal_lipides - kcal_proteines;
     const glucides_g = Math.round(kcal_glucides / 4);
 
+    // Validation : S'assurer que les glucides sont positifs
+    if (glucides_g < 0) {
+      console.warn(
+        `⚠️ Calcul macros invalide: glucides négatifs (${glucides_g}g). ` +
+        `Protéines (${proteines_g}g) + Lipides (${lipides_g}g) dépassent les besoins caloriques.`
+      );
+    }
+
     return {
       lipides_g,
       proteines_g,
-      glucides_g,
+      glucides_g: Math.max(0, glucides_g), // Éviter les valeurs négatives
     };
   } else if (avec_chylomicronemie) {
     // Fallback si pas de limite spécifiée (utiliser 15g par défaut)
-    return calculerMacros(besoins_kcal, true, 15);
+    return calculerMacros(besoins_kcal, poids_kg, objectif, true, 15);
   } else {
-    // Régime équilibré standard
-    const lipides_pct = 0.3; // 30%
-    const proteines_pct = 0.2; // 20%
-    const glucides_pct = 0.5; // 50%
+    // Régime équilibré standard (sans chylomicronémie)
+    // Même logique: protéines basées sur poids corporel
+    let proteines_g_par_kg: number;
+    switch (objectif) {
+      case "PERTE_POIDS":
+        proteines_g_par_kg = 1.6;
+        break;
+      case "MAINTIEN":
+        proteines_g_par_kg = 1.6;
+        break;
+      case "PRISE_MASSE":
+        proteines_g_par_kg = 2.0;
+        break;
+      default:
+        proteines_g_par_kg = 1.6;
+    }
+
+    const proteines_g = Math.round(poids_kg * proteines_g_par_kg);
+    const kcal_proteines = proteines_g * 4;
+
+    // Lipides : 30% des calories (standard)
+    const lipides_pct = 0.3;
+    const lipides_g = Math.round((besoins_kcal * lipides_pct) / 9);
+    const kcal_lipides = lipides_g * 9;
+
+    // Glucides : Complète le reste
+    const kcal_glucides = besoins_kcal - kcal_lipides - kcal_proteines;
+    const glucides_g = Math.round(kcal_glucides / 4);
 
     return {
-      lipides_g: Math.round((besoins_kcal * lipides_pct) / 9),
-      proteines_g: Math.round((besoins_kcal * proteines_pct) / 4),
-      glucides_g: Math.round((besoins_kcal * glucides_pct) / 4),
+      lipides_g,
+      proteines_g,
+      glucides_g: Math.max(0, glucides_g),
     };
   }
 }
@@ -306,6 +362,8 @@ export function calculerValeursProfile(
   // Macros avec limite lipidique adaptée selon TG et/ou jeûne
   const macros_quotidiens = calculerMacros(
     besoins_energetiques_kcal,
+    profile.poids_kg,
+    profile.objectif,
     profile.contraintes_sante.chylomicronemie,
     limite_lipides_finale
   );
