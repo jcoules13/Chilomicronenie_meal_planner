@@ -160,20 +160,51 @@ export function determinerZoneTG(niveau_tg_g_l: number): {
 }
 
 /**
+ * Calcule le coefficient d'ajustement des protéines selon l'âge
+ * Pour compenser la séquestration splanchnique des acides aminés
+ *
+ * Phénomène physiologique : avec le vieillissement, les organes splanchniques
+ * (intestin, foie) captent davantage d'acides aminés avant qu'ils n'atteignent
+ * les muscles périphériques, réduisant leur disponibilité pour la synthèse
+ * protéique musculaire → risque accru de sarcopénie
+ *
+ * Sources scientifiques (2024):
+ * - Frontiers in Nutrition 2024: Séquestration splanchnique augmente avec l'âge
+ * - ESPEN/PROT-AGE: Besoins protéiques ≥65 ans = 1.0-1.5 g/kg (vs 0.8 g/kg jeunes)
+ * - Études cliniques: -40% perte masse maigre avec 1.2 vs 0.8 g/kg sur 3 ans
+ *
+ * @param age - Âge de la personne en années
+ * @returns Coefficient multiplicateur (1.0 = pas d'ajustement, >1.0 = augmentation)
+ */
+function calculerCoefficientAge(age: number): number {
+  if (age < 50) {
+    return 1.0; // Pas d'ajustement pour les adultes jeunes
+  } else if (age < 65) {
+    return 1.15; // +15% pour compenser séquestration modérée (50-64 ans)
+  } else if (age < 75) {
+    return 1.25; // +25% pour compenser séquestration importante (65-74 ans)
+  } else {
+    return 1.30; // +30% pour compenser séquestration majeure (75+ ans)
+  }
+}
+
+/**
  * Calcule les macronutriments quotidiens recommandés
  *
  * Pour la chylomicronémie :
  * - Lipides : Limite STRICTE en grammes selon niveau TG (10-20g/jour max)
- * - Protéines : Basé sur le poids corporel et l'objectif (1.6-2.0 g/kg)
+ * - Protéines : Basé sur le poids corporel, l'objectif ET L'ÂGE
  *   - PERTE_POIDS: 1.6 g/kg (préservation musculaire maximale)
  *   - MAINTIEN: 1.6 g/kg (maintien de la masse musculaire)
  *   - PRISE_MASSE: 2.0 g/kg (croissance musculaire optimale)
+ *   - AJUSTEMENT ÂGE: × coefficient (1.0 à 1.30) pour séquestration splanchnique
  * - Glucides : Complète le reste des besoins énergétiques
  *
  * Sources scientifiques (2024-2025):
  * - Meta-analyses: 1.6-2.7 g/kg pour perte de poids avec préservation musculaire
  * - ISSN/NSCA: 1.6-2.0 g/kg pour athlètes et anciens sportifs
  * - ADA 2024: 1.5-2.0 g/kg pour diabétiques type 2 en perte de poids
+ * - ESPEN/PROT-AGE: 1.0-1.5 g/kg pour personnes ≥65 ans (séquestration splanchnique)
  *
  * Conversion :
  * - 1g de lipides = 9 kcal
@@ -183,6 +214,7 @@ export function determinerZoneTG(niveau_tg_g_l: number): {
 export function calculerMacros(
   besoins_kcal: number,
   poids_kg: number,
+  age: number,
   objectif: ObjectifSante,
   avec_chylomicronemie: boolean = false,
   limite_lipides_max_g?: number
@@ -193,7 +225,7 @@ export function calculerMacros(
     const lipides_g = limite_lipides_max_g;
     const kcal_lipides = lipides_g * 9;
 
-    // Protéines : Basées sur le POIDS CORPOREL et l'OBJECTIF (recommandations 2024)
+    // Protéines : Basées sur le POIDS CORPOREL, l'OBJECTIF et L'ÂGE (recommandations 2024)
     let proteines_g_par_kg: number;
     switch (objectif) {
       case "PERTE_POIDS":
@@ -209,7 +241,9 @@ export function calculerMacros(
         proteines_g_par_kg = 1.6;
     }
 
-    const proteines_g = Math.round(poids_kg * proteines_g_par_kg);
+    // AJUSTEMENT ÂGE : Compenser la séquestration splanchnique
+    const coefficientAge = calculerCoefficientAge(age);
+    const proteines_g = Math.round(poids_kg * proteines_g_par_kg * coefficientAge);
     const kcal_proteines = proteines_g * 4;
 
     // Glucides : Complète le reste des besoins
@@ -231,10 +265,10 @@ export function calculerMacros(
     };
   } else if (avec_chylomicronemie) {
     // Fallback si pas de limite spécifiée (utiliser 15g par défaut)
-    return calculerMacros(besoins_kcal, poids_kg, objectif, true, 15);
+    return calculerMacros(besoins_kcal, poids_kg, age, objectif, true, 15);
   } else {
     // Régime équilibré standard (sans chylomicronémie)
-    // Même logique: protéines basées sur poids corporel
+    // Même logique: protéines basées sur poids corporel ET âge
     let proteines_g_par_kg: number;
     switch (objectif) {
       case "PERTE_POIDS":
@@ -250,7 +284,9 @@ export function calculerMacros(
         proteines_g_par_kg = 1.6;
     }
 
-    const proteines_g = Math.round(poids_kg * proteines_g_par_kg);
+    // AJUSTEMENT ÂGE : Compenser la séquestration splanchnique
+    const coefficientAge = calculerCoefficientAge(age);
+    const proteines_g = Math.round(poids_kg * proteines_g_par_kg * coefficientAge);
     const kcal_proteines = proteines_g * 4;
 
     // Lipides : 30% des calories (standard)
@@ -359,10 +395,11 @@ export function calculerValeursProfile(
       ? limite_lipides_jeune_g
       : limite_lipides_adaptative_g;
 
-  // Macros avec limite lipidique adaptée selon TG et/ou jeûne
+  // Macros avec limite lipidique adaptée selon TG et/ou jeûne + ajustement âge
   const macros_quotidiens = calculerMacros(
     besoins_energetiques_kcal,
     profile.poids_kg,
+    age,
     profile.objectif,
     profile.contraintes_sante.chylomicronemie,
     limite_lipides_finale

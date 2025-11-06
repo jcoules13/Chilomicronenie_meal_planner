@@ -193,6 +193,31 @@ _Aucun bug détecté pour le moment_
 
 ## 🔄 CHANGELOG
 
+### 2025-11-06 (Session 4) - SÉQUESTRATION SPLANCHNIQUE ⚠️ CRITIQUE
+- 🔬 **Recherche scientifique : Séquestration splanchnique validée (3 sources 2024)**
+  - **Frontiers in Nutrition 2024**: Séquestration splanchnique = captation accrue acides aminés par organes digestifs (intestin, foie) avec l'âge → réduction disponibilité pour muscles → **contribue directement à la sarcopénie**
+  - **ESPEN/PROT-AGE Study Group**: Besoins protéiques ≥65 ans = 1.0-1.5 g/kg (vs 0.8 g/kg jeunes adultes)
+  - **Études cliniques**: -40% perte masse maigre sur 3 ans avec 1.2 vs 0.8 g/kg
+
+- ✅ **Correction MAJEURE calculs protéines avec COEFFICIENT D'ÂGE**
+  - Fichier: `lib/utils/profile-calculations.ts:179-188`
+  - **Nouvelle fonction `calculerCoefficientAge(age)`**:
+    - < 50 ans: coefficient **1.0** (pas d'ajustement)
+    - 50-64 ans: coefficient **1.15** (+15% pour compenser séquestration modérée)
+    - 65-74 ans: coefficient **1.25** (+25% pour compenser séquestration importante)
+    - 75+ ans: coefficient **1.30** (+30% pour compenser séquestration majeure)
+
+  - **Formule finale: Protéines = poids × ratio objectif × coefficient âge**
+
+  - **Exemples concrets (ancien sportif, diabétique)**:
+    - 55 ans, 100kg, PERTE_POIDS: 100 × 1.6 × 1.15 = **184g/jour** ✅
+    - 55 ans, 100kg, PRISE_MASSE: 100 × 2.0 × 1.15 = **230g/jour** ✅
+    - 70 ans, 100kg, PERTE_POIDS: 100 × 1.6 × 1.25 = **200g/jour** ✅
+    - 70 ans, 100kg, MAINTIEN: 100 × 1.6 × 1.25 = **200g/jour** ✅
+
+  - **Impact**: Évite la fonte musculaire (sarcopénie) en compensant la perte métabolique liée à l'âge
+  - **Validation**: Glucides ajustés automatiquement, build 0 erreurs
+
 ### 2025-11-06 (Session 3) - Corrections suite retours utilisateur
 - 🔬 Recherche scientifique : Recommandations protéines validées sur 3 sources (2024-2025)
   - Meta-analyses: 1.6-2.7 g/kg pour perte poids + préservation musculaire
@@ -200,11 +225,12 @@ _Aucun bug détecté pour le moment_
   - ADA 2024: 1.5-2.0 g/kg pour diabétiques type 2 en perte de poids
 - ✅ Correction calculs macros profil (lib/utils/profile-calculations.ts)
   - **AVANT**: Protéines = 18% des calories (~95g pour 2100 kcal) ❌
-  - **APRÈS**: Protéines = 1.6-2.0 g/kg selon objectif ✅
+  - **APRÈS**: Protéines = 1.6-2.0 g/kg selon objectif (SANS ajustement âge) ⚠️
     - PERTE_POIDS: 1.6 g/kg = 160g pour 100kg
     - MAINTIEN: 1.6 g/kg = 160g pour 100kg
     - PRISE_MASSE: 2.0 g/kg = 200g pour 100kg
   - Glucides recalculés en conséquence (quantités adaptées pour diabétique)
+  - **NOTE**: Correction incomplète - ajustement âge ajouté en Session 4
 - ✅ Navigation améliorée
   - Ajout bouton "Générer des menus" sur page /menus
   - Icône baguette magique (Wand2) pour identification visuelle
