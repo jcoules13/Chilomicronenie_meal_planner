@@ -196,3 +196,35 @@ export const clear = async (storeName: string): Promise<void> => {
     };
   });
 };
+
+/**
+ * FIND BY NAME - Recherche un aliment par son nom exact (insensible à la casse)
+ */
+export const findByName = async <T extends { nom: string }>(
+  storeName: string,
+  nom: string
+): Promise<T | undefined> => {
+  const allItems = await getAll<T>(storeName);
+  return allItems.find(
+    (item) => item.nom.toLowerCase() === nom.toLowerCase()
+  );
+};
+
+/**
+ * UPSERT - Met à jour si existe (par nom), sinon crée
+ */
+export const upsert = async <T extends { id: string; nom: string }>(
+  storeName: string,
+  data: Omit<T, "id"> & { id?: string }
+): Promise<T> => {
+  const existing = await findByName<T>(storeName, data.nom);
+
+  if (existing) {
+    // Mise à jour : on garde l'ID existant mais on remplace toutes les données
+    const updated = { ...data, id: existing.id } as T;
+    return update(storeName, updated);
+  } else {
+    // Création : nouvel ID
+    return create(storeName, data);
+  }
+};
