@@ -29,12 +29,22 @@
 
 ---
 
-### Phase 4 : Générateur de Menus ⬜
-- [ ] 4.1 Logique génération (algorithme + contraintes)
-- [ ] 4.2 Interface génération (options + prévisualisation + édition)
-- [ ] 4.3 Gestion jeûnes (protocole J1-J11)
-- [ ] 4.4 Export menus Markdown + génération liste courses
-- [ ] ✅ **Validation Phase 4** : Menu généré respecte pathologie, édition OK, export MD
+### Phase 4 : Générateur de Menus 🔄
+- [x] 4.1 Logique génération (algorithme + contraintes)
+  - ✅ Génération semaine complète (7 jours)
+  - ✅ Rotation automatique protéines (Poulet, Boeuf, Dinde, Poisson, Végé)
+  - ✅ Sélection aliments depuis IndexedDB avec filtres (chylo, IG, saison)
+  - ✅ Respect contraintes profil (macros, lipides adaptatives)
+  - ✅ Structure REPAS 1: Salade + Protéine + Légumes + Féculents + Dessert
+  - ✅ Structure REPAS 2: Soupe + Protéine + Légumes + Légumineuses
+- [x] 4.2 Interface génération (options + prévisualisation)
+  - ✅ Page `/menus/generer` avec formulaire
+  - ✅ Affichage contraintes profil
+  - ✅ Sélection saisons
+  - ✅ Prévisualisation menus générés
+- [ ] 4.3 Gestion jeûnes (protocole J1-J11) - À implémenter
+- [ ] 4.4 Export menus Markdown + génération liste courses - À implémenter
+- [ ] ✅ **Validation Phase 4** : Menu généré respecte pathologie, export MD, liste courses OK
 
 ---
 
@@ -102,10 +112,10 @@
 ## 📊 AVANCEMENT GLOBAL
 
 ```
-[████████████░░░░░░░░░░░░░░░░░░] 30% - Phases 1-3 complètes
+[████████████████░░░░░░░░░░░░░░] 50% - Phases 1-3 complètes + Phase 4 en cours
 
-Phase actuelle : Phase 4 - Générateur de Menus
-Prochaine étape : Vérification/implémentation du générateur de menus
+Phase actuelle : Phase 4 - Générateur de Menus (60% complet)
+Prochaine étape : Export Markdown + Liste de courses automatique
 ```
 
 ---
@@ -183,4 +193,10 @@ _Aucun bug détecté pour le moment_
 - ✅ Phase 2 complète : Base de données aliments (bug API corrigé : fiche_aliment/)
 - ✅ Phase 3 complète : Profil utilisateur avec limite lipidique adaptative selon TG
 - 🔧 Correction recommandations lipides : 10-20g/jour selon zone TG (sources NLA 2025)
-- 🚀 Début Phase 4 : Générateur de menus
+- 🚀 Phase 4 en cours : Générateur de menus (60% complet)
+  - ✅ Algorithme génération semaine complète (7 jours)
+  - ✅ Rotation automatique protéines (Poulet → Boeuf → Dinde → Poisson → Végé)
+  - ✅ Sélection aliments intelligente (filtres chylo, IG, saison)
+  - ✅ Page `/menus/generer` avec formulaire et prévisualisation
+  - ✅ Structure repas: REPAS 1 (Salade + Plat + Dessert) / REPAS 2 (Soupe + Plat)
+  - ⏳ Reste à faire: Export Markdown + Liste de courses auto
