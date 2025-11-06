@@ -9,6 +9,7 @@ import {
   CATEGORIES_IMC,
   ZONES_TG,
 } from "@/types/profile";
+import { getLimiteLipidesJeune } from "./fasting-protocol";
 
 /**
  * Calcule l'IMC (Indice de Masse Corporelle)
@@ -289,11 +290,24 @@ export function calculerValeursProfile(
     limite_lipides_adaptative_g = zoneTG.limite_lipides_g;
   }
 
-  // Macros avec limite lipidique adaptée selon TG
+  // Limite lipidique selon protocole de jeûne (prioritaire sur limite TG)
+  const limite_lipides_jeune_g = getLimiteLipidesJeune(
+    profile.config_jeune,
+    limite_lipides_adaptative_g
+  );
+
+  // Déterminer la limite finale à appliquer
+  // Priorité : Jeûne > TG
+  const limite_lipides_finale =
+    limite_lipides_jeune_g !== undefined
+      ? limite_lipides_jeune_g
+      : limite_lipides_adaptative_g;
+
+  // Macros avec limite lipidique adaptée selon TG et/ou jeûne
   const macros_quotidiens = calculerMacros(
     besoins_energetiques_kcal,
     profile.contraintes_sante.chylomicronemie,
-    limite_lipides_adaptative_g
+    limite_lipides_finale
   );
 
   return {
@@ -306,6 +320,7 @@ export function calculerValeursProfile(
     ...zones,
     zone_tg,
     limite_lipides_adaptative_g,
+    limite_lipides_jeune_g,
     macros_quotidiens,
   };
 }

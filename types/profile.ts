@@ -14,6 +14,55 @@ export type NiveauActivite =
 export type ObjectifSante = "MAINTIEN" | "PERTE_POIDS" | "PRISE_MASSE";
 
 /**
+ * Semaine du cycle de 4 semaines
+ */
+export type SemaineCycle = "S1" | "S2" | "S3" | "S4";
+
+/**
+ * État du protocole de jeûne
+ */
+export type EtatJeune =
+  | "INACTIF" // Pas de jeûne en cours
+  | "EN_JEUNE" // En période de jeûne
+  | "REALIMENTATION"; // En période de réalimentation progressive
+
+/**
+ * Historique d'un jeûne
+ */
+export interface HistoriqueJeune {
+  id: string;
+  date_debut: Date;
+  date_fin: Date;
+  duree_jours: number; // 3 ou 4
+  semaine_cycle: SemaineCycle;
+  tg_avant_g_l?: number; // TG avant le jeûne
+  tg_apres_g_l?: number; // TG après le jeûne (à J+7)
+  notes?: string;
+}
+
+/**
+ * Configuration du protocole de jeûne
+ */
+export interface ConfigJeune {
+  actif: boolean; // Le protocole de jeûne est-il activé ?
+  semaine_jeune: SemaineCycle; // Semaine du jeûne (S1, S2, S3, ou S4)
+  duree_jours: 3 | 4; // 3 ou 4 jours de jeûne
+
+  // État actuel du cycle
+  etat_actuel: EtatJeune;
+  jour_cycle?: number; // Jour du cycle (1-28, si cycle de 4 semaines)
+  jour_realimentation?: number; // Jour de réalimentation (J+1 à J+7)
+
+  // Dates du cycle actuel
+  date_debut_cycle?: Date; // Début du cycle de 4 semaines
+  date_debut_jeune?: Date; // Début du jeûne actuel
+  date_fin_jeune?: Date; // Fin du jeûne actuel
+
+  // Historique
+  historique?: HistoriqueJeune[];
+}
+
+/**
  * Zones de triglycérides avec risques associés
  */
 export type ZoneTG =
@@ -70,6 +119,7 @@ export interface ValeursCalculees {
   zone_cardio_maximum: { min: number; max: number }; // Zone 5: 90-100% FC Max
   zone_tg?: ZoneTG; // Zone de triglycérides si chylomicronémie
   limite_lipides_adaptative_g?: number; // Limite lipides adaptée selon TG
+  limite_lipides_jeune_g?: number; // Limite lipides pendant réalimentation (si applicable)
   macros_quotidiens: {
     proteines_g: number;
     lipides_g: number;
@@ -114,6 +164,9 @@ export interface UserProfile {
   // Suivi des triglycérides (chylomicronémie)
   niveau_tg_g_l?: number; // Niveau actuel de TG en g/L
   historique_tg?: MesureTG[]; // Historique des mesures
+
+  // Protocole de jeûne (chylomicronémie)
+  config_jeune?: ConfigJeune; // Configuration du protocole de jeûne
 
   // Configuration des repas
   nombre_repas: number; // 1-5

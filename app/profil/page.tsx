@@ -21,9 +21,27 @@ import {
   RotateCcw,
   TrendingUp,
   Calculator,
+  Calendar,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { CATEGORIES_IMC, PRESETS_REPARTITION, ZONES_TG } from "@/types/profile";
-import type { Sexe, NiveauActivite, ObjectifSante, PresetRepartition } from "@/types/profile";
+import type {
+  Sexe,
+  NiveauActivite,
+  ObjectifSante,
+  PresetRepartition,
+  SemaineCycle,
+  ConfigJeune,
+} from "@/types/profile";
+import {
+  determinerEtatJeune,
+  getJourCycle,
+  getSemaineCycle,
+  getProtocoleRealimentation,
+  getRestrictionsSport,
+  getResumeProtocoleJeune,
+} from "@/lib/utils/fasting-protocol";
 
 export default function ProfilPage() {
   const {
@@ -513,6 +531,341 @@ export default function ProfilPage() {
                   Les triglycérides à chaîne moyenne (MCT C8 et C10) ne forment pas de chylomicrons et peuvent être utilisés pour ajouter des calories sans augmenter les TG. Utiliser uniquement sous supervision médicale.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Protocole de jeûne (si chylomicronémie) */}
+        {profile.contraintes_sante.chylomicronemie && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Protocole de jeûne (4 semaines)
+              </CardTitle>
+              <CardDescription>
+                Jeûne périodique pour réduction rapide des triglycérides
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Activation du protocole */}
+              <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex-1">
+                  <label className="font-medium text-sm">
+                    Activer le protocole de jeûne
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cycle de 4 semaines avec jeûne configurable + réalimentation progressive
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="w-5 h-5"
+                  checked={profile.config_jeune?.actif || false}
+                  onChange={(e) => {
+                    const config: ConfigJeune = profile.config_jeune || {
+                      actif: false,
+                      semaine_jeune: "S2",
+                      duree_jours: 4,
+                      etat_actuel: "INACTIF",
+                    };
+                    updateProfile({
+                      config_jeune: {
+                        ...config,
+                        actif: e.target.checked,
+                        date_debut_cycle: e.target.checked && !config.date_debut_cycle
+                          ? new Date()
+                          : config.date_debut_cycle,
+                      },
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Configuration du jeûne (si actif) */}
+              {profile.config_jeune?.actif && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Semaine du jeûne */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Semaine du jeûne *
+                      </label>
+                      <select
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={profile.config_jeune.semaine_jeune}
+                        onChange={(e) =>
+                          updateProfile({
+                            config_jeune: {
+                              ...profile.config_jeune!,
+                              semaine_jeune: e.target.value as SemaineCycle,
+                            },
+                          })
+                        }
+                      >
+                        <option value="S1">S1 (Test sport + Nutrition normale)</option>
+                        <option value="S2">S2 (Jeûne + Réalimentation)</option>
+                        <option value="S3">S3 (Suite réalimentation)</option>
+                        <option value="S4">S4 (Deload sport + Nutrition)</option>
+                      </select>
+                    </div>
+
+                    {/* Durée du jeûne */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Durée du jeûne *
+                      </label>
+                      <select
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={profile.config_jeune.duree_jours}
+                        onChange={(e) =>
+                          updateProfile({
+                            config_jeune: {
+                              ...profile.config_jeune!,
+                              duree_jours: parseInt(e.target.value) as 3 | 4,
+                            },
+                          })
+                        }
+                      >
+                        <option value="3">3 jours (5 jours réalimentation)</option>
+                        <option value="4">4 jours (7 jours réalimentation)</option>
+                      </select>
+                    </div>
+
+                    {/* Date de début du cycle */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Début du cycle
+                      </label>
+                      <Input
+                        type="date"
+                        value={
+                          profile.config_jeune.date_debut_cycle
+                            ? new Date(profile.config_jeune.date_debut_cycle)
+                                .toISOString()
+                                .split("T")[0]
+                            : ""
+                        }
+                        onChange={(e) =>
+                          updateProfile({
+                            config_jeune: {
+                              ...profile.config_jeune!,
+                              date_debut_cycle: e.target.value
+                                ? new Date(e.target.value)
+                                : new Date(),
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* État actuel du cycle */}
+                  {profile.config_jeune.date_debut_cycle && (() => {
+                    const jour_cycle = getJourCycle(profile.config_jeune.date_debut_cycle);
+                    const semaine_cycle = getSemaineCycle(profile.config_jeune.date_debut_cycle);
+                    const etat = determinerEtatJeune(profile.config_jeune);
+                    const restrictions_sport = getRestrictionsSport(profile.config_jeune, semaine_cycle);
+
+                    return (
+                      <div className="space-y-3">
+                        {/* Progression du cycle */}
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-sm">Position dans le cycle</h4>
+                              <p className="text-xs text-muted-foreground">
+                                Cycle de 4 semaines (28 jours)
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-base font-bold">
+                              {semaine_cycle} - Jour {jour_cycle}/28
+                            </Badge>
+                          </div>
+
+                          {/* Barre de progression */}
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              style={{ width: `${(jour_cycle / 28) * 100}%` }}
+                            />
+                          </div>
+
+                          {/* Légende des semaines */}
+                          <div className="grid grid-cols-4 gap-2 text-xs mt-3">
+                            <div className={`text-center p-2 rounded ${semaine_cycle === "S1" ? "bg-blue-600 text-white font-bold" : "bg-gray-100 dark:bg-gray-800"}`}>
+                              <div className="font-medium">S1</div>
+                              <div className="text-[10px]">Test sport</div>
+                            </div>
+                            <div className={`text-center p-2 rounded ${semaine_cycle === "S2" ? "bg-blue-600 text-white font-bold" : "bg-gray-100 dark:bg-gray-800"}`}>
+                              <div className="font-medium">S2</div>
+                              <div className="text-[10px]">Jeûne</div>
+                            </div>
+                            <div className={`text-center p-2 rounded ${semaine_cycle === "S3" ? "bg-blue-600 text-white font-bold" : "bg-gray-100 dark:bg-gray-800"}`}>
+                              <div className="font-medium">S3</div>
+                              <div className="text-[10px]">Suite</div>
+                            </div>
+                            <div className={`text-center p-2 rounded ${semaine_cycle === "S4" ? "bg-blue-600 text-white font-bold" : "bg-gray-100 dark:bg-gray-800"}`}>
+                              <div className="font-medium">S4</div>
+                              <div className="text-[10px]">Deload</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* État du jeûne */}
+                        {etat.etat === "EN_JEUNE" && (
+                          <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                            <div className="flex items-center gap-3 mb-3">
+                              <Clock className="h-5 w-5 text-orange-600" />
+                              <div>
+                                <h4 className="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                                  Jeûne en cours
+                                </h4>
+                                <p className="text-xs text-orange-700 dark:text-orange-300">
+                                  Jour {profile.config_jeune.duree_jours - (etat.jours_restants || 0) + 1}/{profile.config_jeune.duree_jours} - Encore {etat.jours_restants} jour(s)
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-white/50 dark:bg-black/20 rounded border">
+                              <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                                ⚫ Protocole strict :
+                              </p>
+                              <ul className="text-sm text-orange-800 dark:text-orange-200 mt-2 space-y-1 ml-4">
+                                <li>• Eau, sel, thé, café UNIQUEMENT</li>
+                                <li>• EPAX, créatine, vitamines (SANS Berbérine)</li>
+                                <li>• 0g lipides, 0 kcal alimentaire</li>
+                                <li>• Sport INTERDIT (risque hypoglycémie)</li>
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {etat.etat === "REALIMENTATION" && etat.infos_jour && (
+                          <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <div className="flex items-center gap-3 mb-3">
+                              <Utensils className="h-5 w-5 text-green-600" />
+                              <div>
+                                <h4 className="font-semibold text-sm text-green-900 dark:text-green-100">
+                                  Réalimentation progressive
+                                </h4>
+                                <p className="text-xs text-green-700 dark:text-green-300">
+                                  J+{etat.jour_realimentation} - Encore {etat.jours_restants} jour(s)
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-white/50 dark:bg-black/20 rounded border space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium">Objectif calories :</span>
+                                <span className="font-bold">{etat.infos_jour.calories_cibles} kcal</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium">Limite lipides :</span>
+                                <span className="font-bold text-red-600">
+                                  {etat.infos_jour.limite_lipides_g}g max
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium">Huile MCT :</span>
+                                <Badge variant={etat.infos_jour.mct_autorise ? "default" : "destructive"}>
+                                  {etat.infos_jour.mct_autorise ? "Autorisée" : "Interdite"}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="font-medium">Matières grasses ajoutées :</span>
+                                <Badge variant={etat.infos_jour.ajout_lipides_autorise ? "default" : "destructive"}>
+                                  {etat.infos_jour.ajout_lipides_autorise ? "Autorisées" : "Interdites"}
+                                </Badge>
+                              </div>
+                              {etat.infos_jour.alerte && (
+                                <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200">
+                                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                                    {etat.infos_jour.alerte}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {etat.etat === "INACTIF" && semaine_cycle === profile.config_jeune.semaine_jeune && (
+                          <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <div className="flex items-center gap-3">
+                              <AlertTriangle className="h-5 w-5 text-purple-600" />
+                              <div>
+                                <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100">
+                                  Semaine de jeûne ({semaine_cycle})
+                                </h4>
+                                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                                  Le jeûne devrait commencer cette semaine selon votre configuration
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Restrictions sport */}
+                        {(restrictions_sport.interdit || restrictions_sport.deload) && (
+                          <div className={`p-4 rounded-lg border ${restrictions_sport.interdit ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800" : "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800"}`}>
+                            <div className="flex items-center gap-3">
+                              <AlertTriangle className={`h-5 w-5 ${restrictions_sport.interdit ? "text-red-600" : "text-yellow-600"}`} />
+                              <div>
+                                <h4 className={`font-semibold text-sm ${restrictions_sport.interdit ? "text-red-900 dark:text-red-100" : "text-yellow-900 dark:text-yellow-100"}`}>
+                                  Restrictions sportives
+                                </h4>
+                                {restrictions_sport.message && (
+                                  <p className={`text-xs mt-1 ${restrictions_sport.interdit ? "text-red-700 dark:text-red-300" : "text-yellow-700 dark:text-yellow-300"}`}>
+                                    {restrictions_sport.message}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Impact sur limite lipidique */}
+                        {valeurs?.limite_lipides_jeune_g !== undefined && (
+                          <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-semibold text-sm text-red-900 dark:text-red-100">
+                                  Limite lipidique active (protocole jeûne)
+                                </h4>
+                                <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                                  {valeurs.limite_lipides_jeune_g === 0
+                                    ? "Jeûne en cours : 0g lipides"
+                                    : `Réalimentation : ${valeurs.limite_lipides_jeune_g}g max/jour`}
+                                </p>
+                              </div>
+                              <Badge variant="destructive" className="text-lg font-bold">
+                                {valeurs.limite_lipides_jeune_g}g
+                              </Badge>
+                            </div>
+                            {valeurs.limite_lipides_adaptative_g && valeurs.limite_lipides_jeune_g < valeurs.limite_lipides_adaptative_g && (
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                                ℹ️ Plus restrictif que votre limite TG ({valeurs.limite_lipides_adaptative_g}g)
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Information sur le protocole */}
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      💡 Protocole de jeûne pour chylomicronémie
+                    </p>
+                    <ul className="text-sm text-blue-700 dark:text-blue-300 mt-2 space-y-1 ml-4">
+                      <li>• Le jeûne cause une baisse rapide des triglycérides</li>
+                      <li>• La réalimentation doit être PROGRESSIVE (0g → 10g → 15g → 20g lipides)</li>
+                      <li>• L'huile MCT C8/C10 est réintroduite à J+3 (sûre pour chylomicronémie)</li>
+                      <li>• Contrôle TG critique à J+7 pour valider l'efficacité</li>
+                      <li>• S1 = Test sport | S2 = Jeûne | S3 = Suite | S4 = Deload (-40%)</li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
