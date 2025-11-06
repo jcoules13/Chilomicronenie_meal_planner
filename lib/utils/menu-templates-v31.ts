@@ -155,7 +155,17 @@ export function creerComposantProteine(
     poisson_gras: "Vapeur ou Four sans MG"
   };
 
+  // Calories par gramme (cru) selon type
+  const kcal_par_g: Record<typeof type, number> = {
+    poulet: 1.65,        // ~165 kcal/100g
+    dinde: 1.35,         // ~135 kcal/100g
+    boeuf: 1.30,         // ~130 kcal/100g (5% MG)
+    poisson_maigre: 0.90, // ~90 kcal/100g
+    poisson_gras: 2.00   // ~200 kcal/100g (saumon)
+  };
+
   const quantite_cuit = quantite_cru_g * 0.8; // Approximation perte cuisson
+  const calories = Math.round(quantite_cru_g * kcal_par_g[type]);
 
   return {
     nom: "PROTÉINE",
@@ -171,7 +181,7 @@ export function creerComposantProteine(
       }
     ],
     cuisson: cuisson || cuissons_default[type],
-    calories: 0, // À calculer selon type
+    calories: calories,
   };
 }
 
