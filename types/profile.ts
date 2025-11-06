@@ -62,9 +62,10 @@ export interface ValeursCalculees {
   categorie_imc: "MAIGREUR" | "NORMAL" | "SURPOIDS" | "OBESITE";
   besoins_energetiques_kcal: number; // Métabolisme de base + activité
   fc_max: number; // Fréquence cardiaque maximale
-  zone_cardio_basse: { min: number; max: number }; // 60-70% FC Max
-  zone_cardio_moderee: { min: number; max: number }; // 70-80% FC Max
-  zone_cardio_intense: { min: number; max: number }; // 80-90% FC Max
+  zone_cardio_brule_graisse: { min: number; max: number }; // Zone 2: 60-70% FC Max
+  zone_cardio_aerobie: { min: number; max: number }; // Zone 3: 70-80% FC Max
+  zone_cardio_anaerobie: { min: number; max: number }; // Zone 4: 80-90% FC Max
+  zone_cardio_maximum: { min: number; max: number }; // Zone 5: 90-100% FC Max
   zone_tg?: ZoneTG; // Zone de triglycérides si chylomicronémie
   limite_lipides_adaptative_g?: number; // Limite lipides adaptée selon TG
   macros_quotidiens: {
@@ -188,34 +189,34 @@ export const ZONES_TG = {
     min: 10,
     max: 999,
     label: "Zone critique",
-    description: "Risque élevé de pancréatite aiguë",
+    description: "Risque très élevé de pancréatite aiguë",
     color: "text-red-700",
     bg_color: "bg-red-50 dark:bg-red-950/20",
     border_color: "border-red-200 dark:border-red-800",
     limite_lipides_g: 10, // Restriction maximale
-    alerte: "⚠️ DANGER : Risque pancréatite - Restriction lipidique maximale requise",
+    alerte: "🚨 DANGER CRITIQUE : Risque pancréatite très élevé - Restriction maximale",
   },
   HAUTE: {
     min: 5,
     max: 10,
-    label: "Zone haute",
-    description: "TG élevés, surveillance étroite nécessaire",
+    label: "Zone de danger",
+    description: "Zone de danger pancréatite - Risque élevé",
     color: "text-orange-600",
     bg_color: "bg-orange-50 dark:bg-orange-950/20",
     border_color: "border-orange-200 dark:border-orange-800",
     limite_lipides_g: 15, // Restriction stricte
-    alerte: "⚠️ ATTENTION : TG élevés - Maintenir régime strict",
+    alerte: "⚠️ DANGER : Zone de risque pancréatite - Régime strict obligatoire",
   },
   MODEREE: {
     min: 2,
     max: 5,
-    label: "Zone modérée",
-    description: "TG au-dessus de la normale, contrôle requis",
+    label: "Zone sécurisée",
+    description: "Hors danger pancréatite - TG encore élevés",
     color: "text-yellow-600",
     bg_color: "bg-yellow-50 dark:bg-yellow-950/20",
     border_color: "border-yellow-200 dark:border-yellow-800",
     limite_lipides_g: 18, // Restriction modérée
-    alerte: "💡 INFO : TG modérés - Continuer surveillance",
+    alerte: "✓ SÉCURISÉ : Hors danger pancréatite - Continuer amélioration",
   },
   LIMITE: {
     min: 1.5,

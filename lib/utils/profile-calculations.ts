@@ -73,20 +73,28 @@ export function calculerFCMax(age: number): number {
 
 /**
  * Calcule les zones cardiaques
+ * Zone 2: Brûle graisse (60-70% FC Max)
+ * Zone 3: Aérobie (70-80% FC Max)
+ * Zone 4: Anaérobie (80-90% FC Max)
+ * Zone 5: Maximum (90-100% FC Max)
  */
 export function calculerZonesCardiaques(fc_max: number) {
   return {
-    zone_cardio_basse: {
+    zone_cardio_brule_graisse: {
       min: Math.round(fc_max * 0.6),
       max: Math.round(fc_max * 0.7),
     },
-    zone_cardio_moderee: {
+    zone_cardio_aerobie: {
       min: Math.round(fc_max * 0.7),
       max: Math.round(fc_max * 0.8),
     },
-    zone_cardio_intense: {
+    zone_cardio_anaerobie: {
       min: Math.round(fc_max * 0.8),
       max: Math.round(fc_max * 0.9),
+    },
+    zone_cardio_maximum: {
+      min: Math.round(fc_max * 0.9),
+      max: Math.round(fc_max * 1.0),
     },
   };
 }

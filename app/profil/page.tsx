@@ -456,11 +456,11 @@ export default function ProfilPage() {
                     {(valeurs.zone_tg === "CRITIQUE" || valeurs.zone_tg === "HAUTE") && (
                       <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
                         <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                          🎯 Objectif : Descendre sous 9 g/L pour sortir de la zone de danger pancréatite
+                          🎯 Objectif : Descendre sous 5 g/L pour sortir de la zone de danger pancréatite
                         </p>
-                        {profile.niveau_tg_g_l && profile.niveau_tg_g_l > 9 && (
+                        {profile.niveau_tg_g_l && profile.niveau_tg_g_l > 5 && (
                           <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                            Encore {(profile.niveau_tg_g_l - 9).toFixed(1)} g/L à perdre
+                            Encore {(profile.niveau_tg_g_l - 5).toFixed(1)} g/L à perdre
                           </p>
                         )}
                       </div>
@@ -552,29 +552,38 @@ export default function ProfilPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Zone basse (60-70%)
+                        Zone 2 Brûle graisse (60-70%)
                       </span>
                       <span className="font-medium text-green-600">
-                        {valeurs.zone_cardio_basse.min}-
-                        {valeurs.zone_cardio_basse.max} bpm
+                        {valeurs.zone_cardio_brule_graisse.min}-
+                        {valeurs.zone_cardio_brule_graisse.max} bpm
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Zone modérée (70-80%)
+                        Zone 3 Aérobie (70-80%)
                       </span>
-                      <span className="font-medium text-yellow-600">
-                        {valeurs.zone_cardio_moderee.min}-
-                        {valeurs.zone_cardio_moderee.max} bpm
+                      <span className="font-medium text-blue-600">
+                        {valeurs.zone_cardio_aerobie.min}-
+                        {valeurs.zone_cardio_aerobie.max} bpm
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
-                        Zone intense (80-90%)
+                        Zone 4 Anaérobie (80-90%)
+                      </span>
+                      <span className="font-medium text-orange-600">
+                        {valeurs.zone_cardio_anaerobie.min}-
+                        {valeurs.zone_cardio_anaerobie.max} bpm
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Zone 5 Maximum (90-100%)
                       </span>
                       <span className="font-medium text-red-600">
-                        {valeurs.zone_cardio_intense.min}-
-                        {valeurs.zone_cardio_intense.max} bpm
+                        {valeurs.zone_cardio_maximum.min}-
+                        {valeurs.zone_cardio_maximum.max} bpm
                       </span>
                     </div>
                   </div>
