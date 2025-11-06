@@ -4,12 +4,12 @@ import { join } from "path";
 import { parseAlimentMarkdown } from "@/lib/parsers/markdown-parser";
 
 /**
- * API route pour charger et parser les aliments depuis le dossier fiche_menu/
+ * API route pour charger et parser les aliments depuis le dossier fiche_aliment/
  * GET /api/aliments - Retourne tous les aliments parsés
  */
 export async function GET() {
   try {
-    const alimentDir = join(process.cwd(), "fiche_menu");
+    const alimentDir = join(process.cwd(), "fiche_aliment");
 
     // Lire tous les fichiers .md (sauf README)
     const files = readdirSync(alimentDir).filter(

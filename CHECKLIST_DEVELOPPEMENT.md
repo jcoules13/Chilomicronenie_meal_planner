@@ -2,29 +2,30 @@
 
 ## 📋 PHASES DE DÉVELOPPEMENT
 
-### Phase 1 : Setup & Infrastructure ⬜
-- [ ] 1.1 Initialisation projet Next.js + Tailwind + shadcn/ui
-- [ ] 1.2 Configuration IndexedDB (wrapper + schéma + CRUD)
-- [ ] 1.3 Layout global (Sidebar + Header + Dark mode)
-- [ ] ✅ **Validation Phase 1** : App démarre, navigation OK, IndexedDB opérationnel
+### Phase 1 : Setup & Infrastructure ✅
+- [x] 1.1 Initialisation projet Next.js + Tailwind + shadcn/ui
+- [x] 1.2 Configuration IndexedDB (wrapper + schéma + CRUD)
+- [x] 1.3 Layout global (Sidebar + Header + Dark mode)
+- [x] ✅ **Validation Phase 1** : App démarre, navigation OK, IndexedDB opérationnel
 
 ---
 
-### Phase 2 : Base de Données Aliments ⬜
-- [ ] 2.1 Types & modèles Aliment
-- [ ] 2.2 Parser Markdown (import .md Obsidian)
-- [ ] 2.3 Page liste aliments (grid + filtres + recherche)
-- [ ] 2.4 CRUD aliments (create, read, update, delete)
-- [ ] 2.5 Import/Export Markdown
-- [ ] ✅ **Validation Phase 2** : Import 120 fiches OK, CRUD complet, filtres efficaces
+### Phase 2 : Base de Données Aliments ✅
+- [x] 2.1 Types & modèles Aliment
+- [x] 2.2 Parser Markdown (import .md Obsidian)
+- [x] 2.3 Page liste aliments (grid + filtres + recherche)
+- [x] 2.4 CRUD aliments (create, read, update, delete)
+- [x] 2.5 Import/Export Markdown
+- [x] ✅ **Validation Phase 2** : API corrigée (fiche_aliment/), import fonctionnel, CRUD complet, filtres efficaces
 
 ---
 
-### Phase 3 : Profil Utilisateur & Calculs ⬜
-- [ ] 3.1 Page profil (formulaire complet)
-- [ ] 3.2 Calculs auto (IMC, macros, zones FC)
-- [ ] 3.3 Assouplissement régime (slider 0-100%)
-- [ ] ✅ **Validation Phase 3** : Profil sauvegardé, macros calculées, zones FC exactes
+### Phase 3 : Profil Utilisateur & Calculs ✅
+- [x] 3.1 Page profil (formulaire complet)
+- [x] 3.2 Calculs auto (IMC, macros, zones FC, limite lipidique adaptative selon TG)
+- [x] 3.3 Assouplissement régime (limite lipidique 10-20g selon zone TG)
+- [x] 3.4 Protocole de jeûne (cycle 4 semaines avec réalimentation progressive)
+- [x] ✅ **Validation Phase 3** : Profil sauvegardé, macros calculées, zones FC exactes, limite lipidique adaptative opérationnelle
 
 ---
 
@@ -101,10 +102,10 @@
 ## 📊 AVANCEMENT GLOBAL
 
 ```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0% - Pas encore démarré
+[████████████░░░░░░░░░░░░░░░░░░] 30% - Phases 1-3 complètes
 
-Phase actuelle : Phase 1 - Setup & Infrastructure
-Prochaine étape : Initialisation projet Next.js
+Phase actuelle : Phase 4 - Générateur de Menus
+Prochaine étape : Vérification/implémentation du générateur de menus
 ```
 
 ---
@@ -136,10 +137,14 @@ npm run type-check
 - [ ] Dark mode : Provider + switch soleil/lune ✅
 
 ### Points d'attention :
-- ⚠️ Chylomicronémie = lipides max 30-35g/jour en mode strict
+- ⚠️ Chylomicronémie = lipides 10-20g/jour selon niveau TG (recommandations NLA 2025)
+  - TG ≥ 10 g/L (critique) → 10g lipides/jour
+  - TG 5-10 g/L (danger) → 15g lipides/jour
+  - TG 2-5 g/L (modéré) → 18g lipides/jour
+  - TG < 2 g/L (limite/normal) → 20g lipides/jour
 - ⚠️ Calcul macros : Protéines priorité > Lipides selon pathologie > Glucides = reste
-- ⚠️ Jeûnes mensuels : protocole spécifique J1-J11 (2e semaine)
-- ⚠️ Zones cardiaques calculées depuis FC Max
+- ⚠️ Protocole jeûne : cycle 4 semaines (S1: Test | S2: Jeûne | S3: Suite | S4: Deload)
+- ⚠️ Zones cardiaques calculées depuis FC Max (formule Tanaka)
 
 ### Questions en suspens :
 - _Aucune pour le moment_
@@ -166,5 +171,16 @@ _Aucun bug détecté pour le moment_
 
 ---
 
-**Dernière mise à jour** : [Date à remplir]  
+**Dernière mise à jour** : 2025-11-06
 **Version actuelle** : 0.1.0 (développement)
+
+---
+
+## 🔄 CHANGELOG
+
+### 2025-11-06
+- ✅ Phase 1 complète : Setup & Infrastructure
+- ✅ Phase 2 complète : Base de données aliments (bug API corrigé : fiche_aliment/)
+- ✅ Phase 3 complète : Profil utilisateur avec limite lipidique adaptative selon TG
+- 🔧 Correction recommandations lipides : 10-20g/jour selon zone TG (sources NLA 2025)
+- 🚀 Début Phase 4 : Générateur de menus
