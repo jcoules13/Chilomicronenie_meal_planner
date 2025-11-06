@@ -3,8 +3,10 @@ import {
   ValeursCalculees,
   Sexe,
   NiveauActivite,
+  ZoneTG,
   COEFFICIENTS_ACTIVITE,
   CATEGORIES_IMC,
+  ZONES_TG,
 } from "@/types/profile";
 
 /**
@@ -90,12 +92,48 @@ export function calculerZonesCardiaques(fc_max: number) {
 }
 
 /**
+ * Détermine la zone de triglycérides selon le niveau (en g/L)
+ * et retourne la limite lipidique adaptée
+ */
+export function determinerZoneTG(niveau_tg_g_l: number): {
+  zone: ZoneTG;
+  limite_lipides_g: number;
+} {
+  if (niveau_tg_g_l >= ZONES_TG.CRITIQUE.min) {
+    return {
+      zone: "CRITIQUE",
+      limite_lipides_g: ZONES_TG.CRITIQUE.limite_lipides_g,
+    };
+  } else if (niveau_tg_g_l >= ZONES_TG.HAUTE.min) {
+    return {
+      zone: "HAUTE",
+      limite_lipides_g: ZONES_TG.HAUTE.limite_lipides_g,
+    };
+  } else if (niveau_tg_g_l >= ZONES_TG.MODEREE.min) {
+    return {
+      zone: "MODEREE",
+      limite_lipides_g: ZONES_TG.MODEREE.limite_lipides_g,
+    };
+  } else if (niveau_tg_g_l >= ZONES_TG.LIMITE.min) {
+    return {
+      zone: "LIMITE",
+      limite_lipides_g: ZONES_TG.LIMITE.limite_lipides_g,
+    };
+  } else {
+    return {
+      zone: "NORMALE",
+      limite_lipides_g: ZONES_TG.NORMALE.limite_lipides_g,
+    };
+  }
+}
+
+/**
  * Calcule les macronutriments quotidiens recommandés
  *
  * Pour la chylomicronémie :
- * - Lipides : 10-15% des calories (priorité absolue)
+ * - Lipides : Limite STRICTE en grammes selon niveau TG (10-20g/jour max)
  * - Protéines : 15-20% des calories
- * - Glucides : 65-75% des calories
+ * - Glucides : Complète le reste des besoins énergétiques
  *
  * Conversion :
  * - 1g de lipides = 9 kcal
@@ -104,19 +142,32 @@ export function calculerZonesCardiaques(fc_max: number) {
  */
 export function calculerMacros(
   besoins_kcal: number,
-  avec_chylomicronemie: boolean = false
+  avec_chylomicronemie: boolean = false,
+  limite_lipides_max_g?: number
 ): { proteines_g: number; lipides_g: number; glucides_g: number } {
-  if (avec_chylomicronemie) {
-    // Régime strict très faible en lipides
-    const lipides_pct = 0.12; // 12% (entre 10-15%)
-    const proteines_pct = 0.18; // 18% (entre 15-20%)
-    const glucides_pct = 0.7; // 70% (entre 65-75%)
+  if (avec_chylomicronemie && limite_lipides_max_g !== undefined) {
+    // IMPORTANT : Pour chylomicronémie, la limite en GRAMMES est prioritaire
+    // Ne JAMAIS dépasser la limite, même si cela fait moins de 10% des calories
+    const lipides_g = limite_lipides_max_g;
+    const kcal_lipides = lipides_g * 9;
+
+    // Protéines : 18% des calories totales
+    const proteines_pct = 0.18;
+    const proteines_g = Math.round((besoins_kcal * proteines_pct) / 4);
+    const kcal_proteines = proteines_g * 4;
+
+    // Glucides : Complète le reste des besoins
+    const kcal_glucides = besoins_kcal - kcal_lipides - kcal_proteines;
+    const glucides_g = Math.round(kcal_glucides / 4);
 
     return {
-      lipides_g: Math.round((besoins_kcal * lipides_pct) / 9),
-      proteines_g: Math.round((besoins_kcal * proteines_pct) / 4),
-      glucides_g: Math.round((besoins_kcal * glucides_pct) / 4),
+      lipides_g,
+      proteines_g,
+      glucides_g,
     };
+  } else if (avec_chylomicronemie) {
+    // Fallback si pas de limite spécifiée (utiliser 15g par défaut)
+    return calculerMacros(besoins_kcal, true, 15);
   } else {
     // Régime équilibré standard
     const lipides_pct = 0.3; // 30%
@@ -180,10 +231,24 @@ export function calculerValeursProfile(
   const fc_max = calculerFCMax(age);
   const zones = calculerZonesCardiaques(fc_max);
 
-  // Macros
+  // Zone TG et limite lipidique adaptative (si chylomicronémie)
+  let zone_tg: ZoneTG | undefined;
+  let limite_lipides_adaptative_g: number | undefined;
+
+  if (
+    profile.contraintes_sante.chylomicronemie &&
+    profile.niveau_tg_g_l !== undefined
+  ) {
+    const zoneTG = determinerZoneTG(profile.niveau_tg_g_l);
+    zone_tg = zoneTG.zone;
+    limite_lipides_adaptative_g = zoneTG.limite_lipides_g;
+  }
+
+  // Macros avec limite lipidique adaptée selon TG
   const macros_quotidiens = calculerMacros(
     besoins_energetiques_kcal,
-    profile.contraintes_sante.chylomicronemie
+    profile.contraintes_sante.chylomicronemie,
+    limite_lipides_adaptative_g
   );
 
   return {
@@ -192,6 +257,8 @@ export function calculerValeursProfile(
     besoins_energetiques_kcal,
     fc_max,
     ...zones,
+    zone_tg,
+    limite_lipides_adaptative_g,
     macros_quotidiens,
   };
 }

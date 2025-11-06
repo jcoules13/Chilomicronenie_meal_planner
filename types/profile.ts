@@ -14,6 +14,25 @@ export type NiveauActivite =
 export type ObjectifSante = "MAINTIEN" | "PERTE_POIDS" | "PRISE_MASSE";
 
 /**
+ * Zones de triglycérides avec risques associés
+ */
+export type ZoneTG =
+  | "CRITIQUE" // ≥ 10 g/L - Risque élevé de pancréatite
+  | "HAUTE" // 5-10 g/L - Risque modéré, surveillance étroite
+  | "MODEREE" // 2-5 g/L - Élevé, nécessite contrôle
+  | "LIMITE" // 1.5-2 g/L - Limite haute de la normale
+  | "NORMALE"; // < 1.5 g/L - Objectif thérapeutique
+
+/**
+ * Historique des triglycérides
+ */
+export interface MesureTG {
+  date: Date;
+  valeur_g_l: number;
+  zone: ZoneTG;
+}
+
+/**
  * Preset de répartition calorique
  */
 export type PresetRepartition =
@@ -46,6 +65,8 @@ export interface ValeursCalculees {
   zone_cardio_basse: { min: number; max: number }; // 60-70% FC Max
   zone_cardio_moderee: { min: number; max: number }; // 70-80% FC Max
   zone_cardio_intense: { min: number; max: number }; // 80-90% FC Max
+  zone_tg?: ZoneTG; // Zone de triglycérides si chylomicronémie
+  limite_lipides_adaptative_g?: number; // Limite lipides adaptée selon TG
   macros_quotidiens: {
     proteines_g: number;
     lipides_g: number;
@@ -85,6 +106,10 @@ export interface UserProfile {
 
   // Contraintes santé
   contraintes_sante: ContraintesSante;
+
+  // Suivi des triglycérides (chylomicronémie)
+  niveau_tg_g_l?: number; // Niveau actuel de TG en g/L
+  historique_tg?: MesureTG[]; // Historique des mesures
 
   // Configuration des repas
   nombre_repas: number; // 1-5
@@ -152,4 +177,66 @@ export const CATEGORIES_IMC = {
   NORMAL: { min: 18.5, max: 25, label: "Normal", color: "text-green-600" },
   SURPOIDS: { min: 25, max: 30, label: "Surpoids", color: "text-orange-600" },
   OBESITE: { min: 30, max: 100, label: "Obésité", color: "text-red-600" },
+} as const;
+
+/**
+ * Zones de triglycérides avec limites lipidiques adaptées
+ * Basé sur recommandations médicales pour chylomicronémie
+ */
+export const ZONES_TG = {
+  CRITIQUE: {
+    min: 10,
+    max: 999,
+    label: "Zone critique",
+    description: "Risque élevé de pancréatite aiguë",
+    color: "text-red-700",
+    bg_color: "bg-red-50 dark:bg-red-950/20",
+    border_color: "border-red-200 dark:border-red-800",
+    limite_lipides_g: 10, // Restriction maximale
+    alerte: "⚠️ DANGER : Risque pancréatite - Restriction lipidique maximale requise",
+  },
+  HAUTE: {
+    min: 5,
+    max: 10,
+    label: "Zone haute",
+    description: "TG élevés, surveillance étroite nécessaire",
+    color: "text-orange-600",
+    bg_color: "bg-orange-50 dark:bg-orange-950/20",
+    border_color: "border-orange-200 dark:border-orange-800",
+    limite_lipides_g: 15, // Restriction stricte
+    alerte: "⚠️ ATTENTION : TG élevés - Maintenir régime strict",
+  },
+  MODEREE: {
+    min: 2,
+    max: 5,
+    label: "Zone modérée",
+    description: "TG au-dessus de la normale, contrôle requis",
+    color: "text-yellow-600",
+    bg_color: "bg-yellow-50 dark:bg-yellow-950/20",
+    border_color: "border-yellow-200 dark:border-yellow-800",
+    limite_lipides_g: 18, // Restriction modérée
+    alerte: "💡 INFO : TG modérés - Continuer surveillance",
+  },
+  LIMITE: {
+    min: 1.5,
+    max: 2,
+    label: "Limite haute",
+    description: "Limite haute de la normale",
+    color: "text-blue-600",
+    bg_color: "bg-blue-50 dark:bg-blue-950/20",
+    border_color: "border-blue-200 dark:border-blue-800",
+    limite_lipides_g: 20, // Assouplissement possible
+    alerte: "✓ BON : TG proches de l'objectif - Vigilance maintenue",
+  },
+  NORMALE: {
+    min: 0,
+    max: 1.5,
+    label: "Zone normale",
+    description: "Objectif thérapeutique atteint",
+    color: "text-green-600",
+    bg_color: "bg-green-50 dark:bg-green-950/20",
+    border_color: "border-green-200 dark:border-green-800",
+    limite_lipides_g: 20, // Maximum autorisé même en zone normale
+    alerte: "✅ EXCELLENT : Objectif atteint - Maintenir équilibre",
+  },
 } as const;

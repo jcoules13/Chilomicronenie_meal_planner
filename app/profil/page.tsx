@@ -22,7 +22,7 @@ import {
   TrendingUp,
   Calculator,
 } from "lucide-react";
-import { CATEGORIES_IMC, PRESETS_REPARTITION } from "@/types/profile";
+import { CATEGORIES_IMC, PRESETS_REPARTITION, ZONES_TG } from "@/types/profile";
 import type { Sexe, NiveauActivite, ObjectifSante, PresetRepartition } from "@/types/profile";
 
 export default function ProfilPage() {
@@ -298,28 +298,10 @@ export default function ProfilPage() {
               </label>
 
               {profile.contraintes_sante.chylomicronemie && (
-                <div className="ml-7">
-                  <label className="block text-sm font-medium mb-2">
-                    Limite quotidienne de lipides (g/jour)
-                  </label>
-                  <Input
-                    type="number"
-                    min="10"
-                    max="50"
-                    value={
-                      profile.contraintes_sante.limite_lipides_g_jour || 20
-                    }
-                    onChange={(e) =>
-                      updateProfile({
-                        contraintes_sante: {
-                          ...profile.contraintes_sante,
-                          limite_lipides_g_jour:
-                            parseInt(e.target.value) || 20,
-                        },
-                      })
-                    }
-                    className="w-32"
-                  />
+                <div className="ml-7 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    ℹ️ La limite quotidienne de lipides est calculée automatiquement selon votre niveau de TG. Renseignez vos TG dans la section ci-dessous.
+                  </p>
                 </div>
               )}
 
@@ -404,6 +386,101 @@ export default function ProfilPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Suivi des triglycérides (si chylomicronémie) */}
+        {profile.contraintes_sante.chylomicronemie && (
+          <Card className={valeurs?.zone_tg ? ZONES_TG[valeurs.zone_tg].border_color : ""}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Suivi des triglycérides (TG)
+              </CardTitle>
+              <CardDescription>
+                Le niveau de TG détermine automatiquement votre limite quotidienne de lipides
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Niveau actuel de TG (g/L) *
+                </label>
+                <div className="flex items-center gap-4">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    value={profile.niveau_tg_g_l || ""}
+                    onChange={(e) =>
+                      updateProfile({
+                        niveau_tg_g_l: e.target.value ? parseFloat(e.target.value) : undefined,
+                      })
+                    }
+                    placeholder="Ex: 14.0"
+                    className="w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Valeur normale : &lt; 1.5 g/L
+                  </span>
+                </div>
+              </div>
+
+              {/* Affichage de la zone et alerte */}
+              {valeurs?.zone_tg && (
+                <div className={`p-4 rounded-lg border ${ZONES_TG[valeurs.zone_tg].bg_color} ${ZONES_TG[valeurs.zone_tg].border_color}`}>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className={`font-semibold ${ZONES_TG[valeurs.zone_tg].color}`}>
+                          {ZONES_TG[valeurs.zone_tg].label}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {ZONES_TG[valeurs.zone_tg].description}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-lg font-bold">
+                        {profile.niveau_tg_g_l} g/L
+                      </Badge>
+                    </div>
+
+                    <div className="p-3 bg-background/50 rounded border">
+                      <p className={`text-sm font-medium ${ZONES_TG[valeurs.zone_tg].color}`}>
+                        {ZONES_TG[valeurs.zone_tg].alerte}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        → Limite lipidique adaptée : <span className="font-bold text-foreground">{valeurs.limite_lipides_adaptative_g}g/jour</span>
+                      </p>
+                    </div>
+
+                    {/* Objectif si en zone critique ou haute */}
+                    {(valeurs.zone_tg === "CRITIQUE" || valeurs.zone_tg === "HAUTE") && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          🎯 Objectif : Descendre sous 9 g/L pour sortir de la zone de danger pancréatite
+                        </p>
+                        {profile.niveau_tg_g_l && profile.niveau_tg_g_l > 9 && (
+                          <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                            Encore {(profile.niveau_tg_g_l - 9).toFixed(1)} g/L à perdre
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Information MCT */}
+              <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  💡 Huile MCT C8/C10 : Sûre pour chylomicronémie
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                  Les triglycérides à chaîne moyenne (MCT C8 et C10) ne forment pas de chylomicrons et peuvent être utilisés pour ajouter des calories sans augmenter les TG. Utiliser uniquement sous supervision médicale.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Valeurs calculées */}
         {valeurs && (
@@ -504,12 +581,17 @@ export default function ProfilPage() {
                 </div>
 
                 {profile.contraintes_sante.chylomicronemie && (
-                  <div className="md:col-span-2 p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                      ⚠️ Régime chylomicronémie activé : Les recommandations
-                      en lipides sont strictement limitées à{" "}
-                      {valeurs.macros_quotidiens.lipides_g}g par jour (12%
-                      des calories).
+                  <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      {valeurs.zone_tg ? (
+                        <>
+                          🔄 Régime chylomicronémie : Limite lipidique <strong>adaptative</strong> selon vos TG ({valeurs.zone_tg === "CRITIQUE" ? "zone critique" : valeurs.zone_tg === "HAUTE" ? "zone haute" : valeurs.zone_tg === "MODEREE" ? "zone modérée" : valeurs.zone_tg === "LIMITE" ? "limite" : "normale"}) = {valeurs.macros_quotidiens.lipides_g}g par jour
+                        </>
+                      ) : (
+                        <>
+                          ℹ️ Régime chylomicronémie activé : Renseignez votre niveau de TG pour obtenir une limite lipidique adaptée
+                        </>
+                      )}
                     </p>
                   </div>
                 )}
