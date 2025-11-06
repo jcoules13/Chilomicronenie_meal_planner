@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Wand2, Calendar, Save, Download, ShoppingCart, RefreshCw } from "lucide-react";
 import { Saison } from "@/types/aliment";
-import { genererSemaineMenus } from "@/lib/utils/menu-generator";
+import { genererSemaineMenus, exporterMenusMarkdown, genererListeCourses } from "@/lib/utils/menu-generator";
 import { useProfile } from "@/hooks/useProfile";
 import { MenuV31 } from "@/types/menu";
 import { Checkbox } from "@/components/ui/checkbox";
+import { create } from "@/lib/db/queries";
 
 export default function GenererMenusPage() {
   const { profile, isLoading: profileLoading } = useProfile();
@@ -65,18 +66,59 @@ export default function GenererMenusPage() {
   };
 
   const handleSauvegarder = async () => {
-    // TODO: Sauvegarder les menus dans IndexedDB
-    alert(`Sauvegarde de ${menusGeneres.length} menus (à implémenter)`);
+    try {
+      for (const menu of menusGeneres) {
+        await create<MenuV31>("menus", menu);
+      }
+      alert(`✅ ${menusGeneres.length} menus sauvegardés avec succès dans la base !`);
+    } catch (error) {
+      console.error("Erreur sauvegarde:", error);
+      alert("❌ Erreur lors de la sauvegarde des menus");
+    }
   };
 
   const handleExportMarkdown = () => {
-    // TODO: Export Markdown
-    alert("Export Markdown (à implémenter)");
+    try {
+      const markdown = exporterMenusMarkdown(menusGeneres);
+
+      // Créer un blob et télécharger
+      const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Menus_Semaine_${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert("✅ Export Markdown téléchargé !");
+    } catch (error) {
+      console.error("Erreur export:", error);
+      alert("❌ Erreur lors de l'export Markdown");
+    }
   };
 
   const handleGenererListeCourses = () => {
-    // TODO: Générer liste de courses
-    alert("Génération liste de courses (à implémenter)");
+    try {
+      const listeCourses = genererListeCourses(menusGeneres);
+
+      // Créer un blob et télécharger
+      const blob = new Blob([listeCourses], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Liste_Courses_${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert("✅ Liste de courses téléchargée !");
+    } catch (error) {
+      console.error("Erreur génération liste:", error);
+      alert("❌ Erreur lors de la génération de la liste de courses");
+    }
   };
 
   if (profileLoading) {

@@ -29,7 +29,7 @@
 
 ---
 
-### Phase 4 : Générateur de Menus 🔄
+### Phase 4 : Générateur de Menus ✅
 - [x] 4.1 Logique génération (algorithme + contraintes)
   - ✅ Génération semaine complète (7 jours)
   - ✅ Rotation automatique protéines (Poulet, Boeuf, Dinde, Poisson, Végé)
@@ -42,9 +42,13 @@
   - ✅ Affichage contraintes profil
   - ✅ Sélection saisons
   - ✅ Prévisualisation menus générés
-- [ ] 4.3 Gestion jeûnes (protocole J1-J11) - À implémenter
-- [ ] 4.4 Export menus Markdown + génération liste courses - À implémenter
-- [ ] ✅ **Validation Phase 4** : Menu généré respecte pathologie, export MD, liste courses OK
+- [x] 4.3 Export menus Markdown + génération liste courses
+  - ✅ Export Markdown (format compatible avec menus manuels)
+  - ✅ Génération liste de courses (regroupement ingrédients par catégorie)
+  - ✅ Sauvegarde IndexedDB des menus générés
+  - ✅ Téléchargement fichiers MD
+- [ ] 4.4 Gestion jeûnes (protocole J1-J11) - À implémenter Phase 7
+- [x] ✅ **Validation Phase 4** : Menu généré respecte pathologie, export MD, liste courses OK
 
 ---
 
@@ -112,10 +116,11 @@
 ## 📊 AVANCEMENT GLOBAL
 
 ```
-[████████████████░░░░░░░░░░░░░░] 50% - Phases 1-3 complètes + Phase 4 en cours
+[██████████████████░░░░░░░░░░░░] 55% - Phases 1-4 complètes
 
-Phase actuelle : Phase 4 - Générateur de Menus (60% complet)
-Prochaine étape : Export Markdown + Liste de courses automatique
+Phase actuelle : Phase 4 complète ✅
+Prochaine étape : Phase 5 - Listes de courses automatiques (note: déjà intégré dans Phase 4)
+Alternative : Phase 6 - Programme Sportif 24 semaines
 ```
 
 ---
@@ -188,15 +193,22 @@ _Aucun bug détecté pour le moment_
 
 ## 🔄 CHANGELOG
 
-### 2025-11-06
+### 2025-11-06 (Session 2)
+- ✅ Phase 4 COMPLÈTE : Générateur de menus (100%)
+  - ✅ Export Markdown : Génération fichiers .md compatibles avec menus manuels
+  - ✅ Liste de courses automatique : Regroupement intelligent par catégorie
+  - ✅ Sauvegarde IndexedDB : Enregistrement des menus générés
+  - ✅ Téléchargement fichiers : Export .md pour menus et liste de courses
+  - ✅ Corrections types : Utilisation correcte de MenuV31 (repas_1, repas_2, ingredients)
+
+### 2025-11-06 (Session 1)
 - ✅ Phase 1 complète : Setup & Infrastructure
 - ✅ Phase 2 complète : Base de données aliments (bug API corrigé : fiche_aliment/)
 - ✅ Phase 3 complète : Profil utilisateur avec limite lipidique adaptative selon TG
 - 🔧 Correction recommandations lipides : 10-20g/jour selon zone TG (sources NLA 2025)
-- 🚀 Phase 4 en cours : Générateur de menus (60% complet)
+- 🚀 Phase 4 démarrée : Générateur de menus (60% complet)
   - ✅ Algorithme génération semaine complète (7 jours)
   - ✅ Rotation automatique protéines (Poulet → Boeuf → Dinde → Poisson → Végé)
   - ✅ Sélection aliments intelligente (filtres chylo, IG, saison)
   - ✅ Page `/menus/generer` avec formulaire et prévisualisation
   - ✅ Structure repas: REPAS 1 (Salade + Plat + Dessert) / REPAS 2 (Soupe + Plat)
-  - ⏳ Reste à faire: Export Markdown + Liste de courses auto

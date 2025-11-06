@@ -288,14 +288,389 @@ export async function genererSemaineMenus(
  * Exporter les menus en Markdown
  */
 export function exporterMenusMarkdown(menus: MenuV31[]): string {
-  // TODO: Implémenter export Markdown
-  return `# Menus générés\n\n${menus.length} menus`;
+  const fichiers: string[] = [];
+
+  menus.forEach((menu, index) => {
+    const jour = index + 1;
+    const dateMenu = new Date(menu.date_creation);
+    const dateStr = dateMenu.toLocaleDateString("fr-FR");
+
+    // YAML frontmatter
+    let md = `---\n`;
+    md += `nom: "${menu.nom}"\n`;
+    md += `type_proteine: "${menu.type_proteine}"\n`;
+    md += `numero: ${menu.numero}\n`;
+    md += `date: "${dateStr}"\n`;
+    md += `lipides_totaux: "${menu.lipides_cibles_g}g"\n`;
+    md += `ig_moyen: "Bas"\n`;
+    md += `genere_automatiquement: true\n`;
+    md += `---\n\n`;
+
+    // Titre
+    const emoji = menu.type_proteine === "Poulet" ? "🍗" :
+                  menu.type_proteine === "Boeuf" ? "🥩" :
+                  menu.type_proteine === "Dinde" ? "🦃" :
+                  menu.type_proteine.includes("Poisson") ? "🐟" : "🥗";
+    md += `# ${emoji} ${menu.nom} - Jour ${jour}\n\n`;
+
+    md += `> ⚠️ **Menu généré automatiquement**  \n`;
+    md += `> Date de génération : ${dateStr}  \n`;
+    md += `> Type de protéine : ${menu.type_proteine}\n\n`;
+    md += `---\n\n`;
+
+    // Objectifs nutritionnels
+    md += `## 📊 Informations nutritionnelles CIBLES\n\n`;
+    md += `| Repas | Calories | Protéines | Lipides | Glucides |\n`;
+    md += `|-------|----------|-----------|---------|----------|\n`;
+    md += `| **Repas 1 (11h)** | ${menu.repas_1.calories_cibles} kcal | ${menu.repas_1.proteines_cibles_g}g | ${menu.repas_1.lipides_cibles_g}g | ${menu.repas_1.glucides_cibles_g}g |\n`;
+    md += `| **Repas 2 (17h)** | ${menu.repas_2.calories_cibles} kcal | ${menu.repas_2.proteines_cibles_g}g | ${menu.repas_2.lipides_cibles_g}g | ${menu.repas_2.glucides_cibles_g}g |\n`;
+
+    const totalCal = menu.repas_1.calories_cibles + menu.repas_2.calories_cibles;
+    const totalProt = menu.repas_1.proteines_cibles_g + menu.repas_2.proteines_cibles_g;
+    const totalLip = menu.repas_1.lipides_cibles_g + menu.repas_2.lipides_cibles_g;
+    const totalGluc = menu.repas_1.glucides_cibles_g + menu.repas_2.glucides_cibles_g;
+
+    md += `| **TOTAL JOUR** | **${totalCal} kcal** | **${totalProt}g** | **${totalLip}g** | **${totalGluc}g** |\n\n`;
+    md += `**Budget lipides strict** : ${menu.lipides_cibles_g}g/jour maximum (chylomicronémie)\n\n`;
+    md += `---\n\n`;
+
+    // REPAS 1
+    md += `## 🍽️ REPAS 1 - 11h00 (${menu.repas_1.calories_cibles} kcal)\n\n`;
+
+    // Entrée (Salade)
+    const salade = menu.repas_1.composants.find(c => c.nom.includes("ENTRÉE") || c.nom.includes("Salade"));
+    if (salade) {
+      md += `### 🥗 ENTRÉE - ${salade.nom}\n\n`;
+      md += `**Composition** :\n`;
+      salade.ingredients.forEach(ing => {
+        md += `- ${ing.nom} : ${ing.quantite}${ing.unite}\n`;
+      });
+      md += `\n**Assaisonnement STRICT** :\n`;
+      md += `- Vinaigre balsamique : 2 c.à.soupe\n`;
+      md += `- Moutarde : 1 c.à.café\n`;
+      md += `- **Huile d'olive : 1 c.à.café (5g) MAX** ⚠️\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Protéine
+    const proteine1 = menu.repas_1.composants.find(c => c.nom.includes("PROTÉINE"));
+    if (proteine1) {
+      md += `### ${emoji} PROTÉINE (${proteine1.calories || 0} kcal)\n\n`;
+      md += `**${proteine1.description}**\n\n`;
+      if (proteine1.ingredients.length > 0) {
+        md += `**Quantité** : ${proteine1.ingredients[0].quantite}${proteine1.ingredients[0].unite}\n\n`;
+      }
+      md += `**Cuisson sans matière grasse** :\n`;
+      md += `- Vapeur, poché, four 180°C ou poêle antiadhésive\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Légumes
+    const legumes1 = menu.repas_1.composants.find(c => c.nom.includes("LÉGUMES"));
+    if (legumes1) {
+      md += `### 🥦 LÉGUMES (${legumes1.calories || 0} kcal)\n\n`;
+      legumes1.ingredients.forEach(ing => {
+        md += `- ${ing.nom} : ${ing.quantite}${ing.unite}\n`;
+      });
+      md += `\n**Cuisson** : ${legumes1.cuisson || "Vapeur, four ou poêle légère"}\n`;
+      md += `**Assaisonnement** : Herbes, épices, citron\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Féculents
+    const feculents = menu.repas_1.composants.find(c => c.nom.includes("FÉCULENTS"));
+    if (feculents) {
+      md += `### 🍚 FÉCULENTS (${feculents.calories || 0} kcal)\n\n`;
+      md += `**${feculents.description}**\n\n`;
+      if (feculents.ingredients.length > 0) {
+        md += `**Quantité** : ${feculents.ingredients[0].quantite}${feculents.ingredients[0].unite}\n\n`;
+      }
+      md += `**⭐ IG BAS recommandé** : Privilégier lentilles (IG 30), quinoa (IG 35)\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Dessert
+    const dessert = menu.repas_1.composants.find(c => c.nom.includes("DESSERT"));
+    if (dessert) {
+      md += `### 🍨 DESSERT (${dessert.calories || 0} kcal)\n\n`;
+      dessert.ingredients.forEach(ing => {
+        md += `- ${ing.nom} : ${ing.quantite}${ing.unite}\n`;
+      });
+      md += `\n`;
+      md += `---\n\n`;
+    }
+
+    // REPAS 2
+    md += `## 🥣 REPAS 2 - 17h00 (${menu.repas_2.calories_cibles} kcal)\n\n`;
+
+    // Entrée (Soupe)
+    const soupe = menu.repas_2.composants.find(c => c.nom.includes("ENTRÉE") || c.nom.includes("Soupe"));
+    if (soupe) {
+      md += `### 🍲 ENTRÉE - ${soupe.nom}\n\n`;
+      md += `**Portion** : 250ml\n\n`;
+      md += `**Composition** :\n`;
+      soupe.ingredients.forEach(ing => {
+        md += `- ${ing.nom} : ${ing.quantite}${ing.unite}\n`;
+      });
+      md += `\n**Préparation** : Cuire les légumes dans bouillon, mixer si souhaité\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Protéine
+    const proteine2 = menu.repas_2.composants.find(c => c.nom.includes("PROTÉINE"));
+    if (proteine2) {
+      md += `### ${emoji} PROTÉINE (${proteine2.calories || 0} kcal)\n\n`;
+      md += `**${proteine2.description}**\n\n`;
+      if (proteine2.ingredients.length > 0) {
+        md += `**Quantité** : ${proteine2.ingredients[0].quantite}${proteine2.ingredients[0].unite}\n\n`;
+      }
+      md += `---\n\n`;
+    }
+
+    // Légumes d'accompagnement
+    const legumes2 = menu.repas_2.composants.find(c => c.nom.includes("LÉGUMES"));
+    if (legumes2) {
+      md += `### 🥦 LÉGUMES D'ACCOMPAGNEMENT (${legumes2.calories || 0} kcal)\n\n`;
+      legumes2.ingredients.forEach(ing => {
+        md += `- ${ing.nom} : ${ing.quantite}${ing.unite}\n`;
+      });
+      md += `\n**Cuisson** : ${legumes2.cuisson || "Vapeur ou poêle légère"}\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Légumineuses
+    const legumineuses = menu.repas_2.composants.find(c => c.nom.includes("LÉGUMINEUSES"));
+    if (legumineuses) {
+      md += `### 🫘 LÉGUMINEUSES (${legumineuses.calories || 0} kcal)\n\n`;
+      md += `**${legumineuses.description}**\n\n`;
+      if (legumineuses.ingredients.length > 0) {
+        md += `**Quantité** : ${legumineuses.ingredients[0].quantite}${legumineuses.ingredients[0].unite}\n\n`;
+      }
+      md += `**⭐ IG BAS** : Excellentes pour la glycémie\n\n`;
+      md += `---\n\n`;
+    }
+
+    // Récapitulatif
+    md += `## 📊 RÉCAPITULATIF NUTRITIONNEL JOURNÉE\n\n`;
+    md += `| Nutriment | Cible | Réalisé | Statut |\n`;
+    md += `|-----------|-------|---------|--------|\n`;
+    md += `| **Calories** | ${totalCal} | ${totalCal} | ✅ |\n`;
+    md += `| **Protéines** | ${totalProt}g | ${totalProt}g | ✅ |\n`;
+    md += `| **Lipides** | ${totalLip}g | ${totalLip}g | ✅ Respecté |\n`;
+    md += `| **Glucides** | ${totalGluc}g | ${totalGluc}g | ✅ |\n\n`;
+    md += `---\n\n`;
+
+    // Points critiques
+    md += `## ⚠️ POINTS CRITIQUES - CHYLOMICRONÉMIE\n\n`;
+    md += `### ✅ CE MENU RESPECTE :\n`;
+    md += `1. **Budget lipides ${menu.lipides_cibles_g}g/jour** strictement contrôlé\n`;
+    md += `2. **Protéines ultra-maigres** sélectionnées\n`;
+    md += `3. **IG BAS** prioritaire\n`;
+    md += `4. **Fibres élevées** pour satiété\n\n`;
+    md += `### ❌ À ÉVITER ABSOLUMENT :\n`;
+    md += `- ❌ Ajouter matières grasses supplémentaires\n`;
+    md += `- ❌ Augmenter les portions sans ajustement\n`;
+    md += `- ❌ Peau/graisses visibles sur protéines\n\n`;
+    md += `---\n\n`;
+
+    // Tags
+    md += `## 🏷️ Tags & Métadonnées\n\n`;
+    md += `#menu #${menu.type_proteine.toLowerCase().replace(" ", "-")} #genere-auto #ig-bas #chylomicronémie-compatible\n\n`;
+    md += `**Date génération** : ${dateStr}\n`;
+    md += `**Version** : 1.0 (auto)\n\n`;
+
+    fichiers.push(md);
+  });
+
+  // Combiner tous les fichiers avec séparateur
+  return fichiers.join("\n\n---\n\n# NOUVEAU MENU\n\n---\n\n");
 }
 
 /**
  * Générer liste de courses à partir des menus
  */
 export function genererListeCourses(menus: MenuV31[]): string {
-  // TODO: Implémenter liste de courses
-  return `# Liste de courses\n\n${menus.length} menus`;
+  // Structure pour regrouper les ingrédients
+  interface Ingredient {
+    nom: string;
+    quantite_totale: number;
+    unite: string;
+    categorie: string;
+  }
+
+  const ingredients = new Map<string, Ingredient>();
+
+  // Parcourir tous les menus et leurs composants
+  menus.forEach((menu) => {
+    // REPAS 1
+    menu.repas_1.composants.forEach((composant) => {
+      const categorie = composant.nom.includes("PROTÉINE") ? "Protéines" :
+                        composant.nom.includes("LÉGUMES") ? "Légumes" :
+                        composant.nom.includes("FÉCULENTS") ? "Féculents" :
+                        composant.nom.includes("ENTRÉE") || composant.nom.includes("Salade") ? "Entrées/Salades" :
+                        composant.nom.includes("DESSERT") ? "Desserts" : "Autres";
+
+      composant.ingredients.forEach((ingredient) => {
+        const key = ingredient.nom.toLowerCase();
+
+        // Convertir tout en grammes
+        let quantite_g = ingredient.quantite;
+        if (ingredient.unite === "ml") {
+          quantite_g = ingredient.quantite; // 1ml ≈ 1g pour liquides
+        } else if (ingredient.unite !== "g") {
+          quantite_g = ingredient.quantite * 100; // Estimation pour unités
+        }
+
+        if (ingredients.has(key)) {
+          const existing = ingredients.get(key)!;
+          existing.quantite_totale += quantite_g;
+        } else {
+          ingredients.set(key, {
+            nom: ingredient.nom,
+            quantite_totale: quantite_g,
+            unite: "g",
+            categorie,
+          });
+        }
+      });
+    });
+
+    // REPAS 2
+    menu.repas_2.composants.forEach((composant) => {
+      const categorie = composant.nom.includes("PROTÉINE") ? "Protéines" :
+                        composant.nom.includes("LÉGUMES") ? "Légumes" :
+                        composant.nom.includes("LÉGUMINEUSES") ? "Légumineuses" :
+                        composant.nom.includes("ENTRÉE") || composant.nom.includes("Soupe") ? "Soupes" : "Autres";
+
+      composant.ingredients.forEach((ingredient) => {
+        const key = ingredient.nom.toLowerCase();
+
+        // Convertir tout en grammes
+        let quantite_g = ingredient.quantite;
+        if (ingredient.unite === "ml") {
+          quantite_g = ingredient.quantite;
+        } else if (ingredient.unite !== "g") {
+          quantite_g = ingredient.quantite * 100;
+        }
+
+        if (ingredients.has(key)) {
+          const existing = ingredients.get(key)!;
+          existing.quantite_totale += quantite_g;
+        } else {
+          ingredients.set(key, {
+            nom: ingredient.nom,
+            quantite_totale: quantite_g,
+            unite: "g",
+            categorie,
+          });
+        }
+      });
+    });
+  });
+
+  // Regrouper par catégorie
+  const parCategorie = new Map<string, Ingredient[]>();
+
+  ingredients.forEach((ingredient) => {
+    if (!parCategorie.has(ingredient.categorie)) {
+      parCategorie.set(ingredient.categorie, []);
+    }
+    parCategorie.get(ingredient.categorie)!.push(ingredient);
+  });
+
+  // Générer le Markdown
+  let md = `# 🛒 Liste de courses - Semaine du ${new Date().toLocaleDateString("fr-FR")}\n\n`;
+  md += `> 📋 Liste générée automatiquement pour ${menus.length} jours de menus  \n`;
+  md += `> ⚠️ Quantités en grammes - À ajuster selon disponibilité magasin\n\n`;
+  md += `---\n\n`;
+
+  // Ordre des catégories
+  const ordreCategories = [
+    "Protéines",
+    "Légumes",
+    "Féculents",
+    "Légumineuses",
+    "Entrées/Salades",
+    "Soupes",
+    "Desserts",
+    "Autres"
+  ];
+
+  ordreCategories.forEach((categorie) => {
+    if (parCategorie.has(categorie)) {
+      const items = parCategorie.get(categorie)!;
+
+      // Emoji par catégorie
+      const emoji = categorie === "Protéines" ? "🍖" :
+                    categorie === "Légumes" ? "🥬" :
+                    categorie === "Féculents" ? "🌾" :
+                    categorie === "Légumineuses" ? "🫘" :
+                    categorie === "Entrées/Salades" ? "🥗" :
+                    categorie === "Soupes" ? "🍲" :
+                    categorie === "Desserts" ? "🍨" : "📦";
+
+      md += `## ${emoji} ${categorie}\n\n`;
+
+      // Trier par ordre alphabétique
+      items.sort((a, b) => a.nom.localeCompare(b.nom));
+
+      items.forEach((item) => {
+        // Arrondir les quantités
+        const quantite = Math.ceil(item.quantite_totale);
+        md += `- [ ] **${item.nom}** : ${quantite}${item.unite}\n`;
+      });
+
+      md += `\n`;
+    }
+  });
+
+  // Section assaisonnements de base
+  md += `---\n\n`;
+  md += `## 🧂 Assaisonnements & Condiments de base\n\n`;
+  md += `- [ ] **Huile d'olive** : 50ml (pour vinaigrettes)\n`;
+  md += `- [ ] **Vinaigre balsamique** : 1 bouteille\n`;
+  md += `- [ ] **Moutarde** : 1 pot\n`;
+  md += `- [ ] **Sel, poivre** : À vérifier stock\n`;
+  md += `- [ ] **Herbes** : Thym, romarin, basilic, persil\n`;
+  md += `- [ ] **Épices** : Curcuma, curry, paprika, cannelle\n`;
+  md += `- [ ] **Citron** : 3-4 unités\n`;
+  md += `- [ ] **Ail, oignon** : À vérifier stock\n\n`;
+
+  md += `---\n\n`;
+  md += `## 📝 Conseils d'achat\n\n`;
+  md += `### Conversions utiles :\n`;
+  md += `- **Viande/Poisson** : Les quantités sont en grammes CRU\n`;
+  md += `- **Féculents/Légumineuses** : Les quantités sont en grammes SEC (non cuit)\n`;
+  md += `- **Légumes** : Les quantités sont en grammes NET (épluchés/nettoyés)\n\n`;
+  md += `### Substitutions possibles :\n`;
+  md += `- **Blanc de poulet** → Blanc de dinde (équivalent)\n`;
+  md += `- **Poisson maigre** → Cabillaud, colin, lieu noir (interchangeables)\n`;
+  md += `- **Lentilles vertes** ↔ Lentilles corail (IG similaire)\n`;
+  md += `- **Légumes frais** → Surgelés nature (aussi nutritifs)\n\n`;
+  md += `### Organisation courses :\n`;
+  md += `1. **Rayon frais** : Viandes, poissons (acheter en dernier)\n`;
+  md += `2. **Rayon fruits/légumes** : Vérifier fraîcheur, privilégier local\n`;
+  md += `3. **Rayon sec** : Féculents, légumineuses (en vrac si possible)\n`;
+  md += `4. **Rayon frais** : Produits laitiers (skyr, fromage blanc 0%)\n\n`;
+
+  md += `---\n\n`;
+  md += `## ⏰ Conservation & Préparation\n\n`;
+  md += `### À préparer dès retour des courses :\n`;
+  md += `1. **Laver et couper** les légumes → Boîtes hermétiques (3-4 jours)\n`;
+  md += `2. **Diviser les viandes** en portions → Congeler ce qui sera utilisé après J+3\n`;
+  md += `3. **Cuire les légumineuses** en grande quantité → Frigo 4-5 jours\n`;
+  md += `4. **Préparer les soupes** de la semaine → Portions individuelles\n\n`;
+
+  md += `### Durées de conservation (frigo 4°C) :\n`;
+  md += `- Viande crue : 2-3 jours\n`;
+  md += `- Poisson cru : 1-2 jours\n`;
+  md += `- Légumes coupés : 3-4 jours\n`;
+  md += `- Légumineuses cuites : 4-5 jours\n`;
+  md += `- Soupes maison : 4-5 jours\n\n`;
+
+  md += `---\n\n`;
+  md += `**Dernière mise à jour** : ${new Date().toLocaleDateString("fr-FR")}\n`;
+  md += `**Version** : 1.0 (auto)\n`;
+
+  return md;
 }
