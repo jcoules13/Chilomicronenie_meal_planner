@@ -3,6 +3,7 @@ import {
   ValeursCalculees,
   Sexe,
   NiveauActivite,
+  ObjectifSante,
   ZoneTG,
   COEFFICIENTS_ACTIVITE,
   CATEGORIES_IMC,
@@ -53,14 +54,36 @@ export function calculerMetabolismeBase(
 
 /**
  * Calcule les besoins énergétiques totaux
- * BET = MB × Coefficient d'activité
+ * BET = MB × Coefficient d'activité + Ajustement selon objectif
+ *
+ * Ajustements :
+ * - PERTE_POIDS : -400 kcal (déficit modéré et sain)
+ * - MAINTIEN : 0 kcal (besoins de base)
+ * - PRISE_MASSE : +300 kcal (surplus modéré)
  */
 export function calculerBesoinsEnergetiques(
   metabolisme_base: number,
-  niveau_activite: NiveauActivite
+  niveau_activite: NiveauActivite,
+  objectif: ObjectifSante
 ): number {
   const coefficient = COEFFICIENTS_ACTIVITE[niveau_activite];
-  return Math.round(metabolisme_base * coefficient);
+  const besoins_base = metabolisme_base * coefficient;
+
+  // Ajustement selon l'objectif
+  let ajustement = 0;
+  switch (objectif) {
+    case "PERTE_POIDS":
+      ajustement = -400; // Déficit calorique modéré pour perte de poids saine (~0.5kg/semaine)
+      break;
+    case "MAINTIEN":
+      ajustement = 0; // Pas d'ajustement
+      break;
+    case "PRISE_MASSE":
+      ajustement = +300; // Surplus calorique modéré pour prise de masse progressive
+      break;
+  }
+
+  return Math.round(besoins_base + ajustement);
 }
 
 /**
@@ -232,7 +255,8 @@ export function calculerValeursProfile(
   );
   const besoins_energetiques_kcal = calculerBesoinsEnergetiques(
     metabolisme_base,
-    profile.niveau_activite
+    profile.niveau_activite,
+    profile.objectif
   );
 
   // Zones cardiaques
