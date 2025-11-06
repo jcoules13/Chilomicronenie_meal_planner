@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { AlimentCard } from "@/components/aliments/AlimentCard";
 import { AlimentFilters } from "@/components/aliments/AlimentFilters";
 import { useAliments } from "@/hooks/useAliments";
-import { Upload, Plus, Search } from "lucide-react";
+import { Upload, Plus, Search, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export default function AlimentsPage() {
-  const { aliments, allAliments, isLoading, filters, setFilters, deleteAliment } =
+  const { aliments, allAliments, isLoading, filters, setFilters, deleteAliment, loadFromMarkdown } =
     useAliments();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoadingMarkdown, setIsLoadingMarkdown] = useState(false);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -28,6 +29,18 @@ export default function AlimentsPage() {
       alert("Aliment supprimé avec succès");
     } catch (error) {
       alert("Erreur lors de la suppression");
+    }
+  };
+
+  const handleLoadFromMarkdown = async () => {
+    setIsLoadingMarkdown(true);
+    try {
+      await loadFromMarkdown();
+      alert("Aliments chargés avec succès !");
+    } catch (error) {
+      alert("Erreur lors du chargement des aliments");
+    } finally {
+      setIsLoadingMarkdown(false);
     }
   };
 
@@ -62,7 +75,15 @@ export default function AlimentsPage() {
 
             {/* Boutons d'action */}
             <div className="flex gap-2">
-              <Button asChild>
+              <Button
+                onClick={handleLoadFromMarkdown}
+                disabled={isLoadingMarkdown}
+                variant="default"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingMarkdown ? 'animate-spin' : ''}`} />
+                Charger depuis Markdown
+              </Button>
+              <Button asChild variant="outline">
                 <Link href="/aliments/import">
                   <Upload className="h-4 w-4 mr-2" />
                   Importer
@@ -88,14 +109,15 @@ export default function AlimentsPage() {
                 <div className="space-y-4">
                   <p className="text-lg font-medium">Aucun aliment dans la base</p>
                   <p className="text-sm text-muted-foreground">
-                    Commencez par importer vos fiches Markdown ou créez un nouvel aliment
+                    Chargez les aliments depuis les fichiers Markdown du dossier /fiche_menu
                   </p>
                   <div className="flex gap-3 justify-center">
-                    <Button asChild>
-                      <Link href="/aliments/import">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Importer des fiches
-                      </Link>
+                    <Button
+                      onClick={handleLoadFromMarkdown}
+                      disabled={isLoadingMarkdown}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Charger les aliments
                     </Button>
                     <Button asChild variant="outline">
                       <Link href="/aliments/nouveau">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Aliment, CategorieAliment, CompatibilitePathologie } from "@/types/aliment";
-import { getAll, deleteById } from "@/lib/db/queries";
+import { getAll, deleteById, create } from "@/lib/db/queries";
 
 export interface AlimentFilters {
   categorie?: CategorieAliment;
@@ -89,6 +89,35 @@ export function useAliments() {
     setFilteredAliments(filtered);
   }, [aliments, filters]);
 
+  // Charger les aliments depuis l'API (fichiers markdown) et les stocker dans IndexedDB
+  const loadFromMarkdown = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/aliments");
+      const data = await response.json();
+
+      if (data.success && data.aliments) {
+        // Stocker chaque aliment dans IndexedDB
+        for (const aliment of data.aliments) {
+          try {
+            await create<Aliment>("aliments", aliment);
+          } catch (error) {
+            // Ignorer les erreurs de duplication (aliment déjà existant)
+            console.warn(`Aliment ${aliment.nom} déjà existant, ignoré`);
+          }
+        }
+
+        // Recharger depuis IndexedDB
+        await loadAliments();
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement depuis Markdown:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadAliments]);
+
   // Supprimer un aliment
   const deleteAliment = useCallback(
     async (id: string) => {
@@ -111,5 +140,6 @@ export function useAliments() {
     setFilters,
     deleteAliment,
     reload: loadAliments,
+    loadFromMarkdown,
   };
 }
