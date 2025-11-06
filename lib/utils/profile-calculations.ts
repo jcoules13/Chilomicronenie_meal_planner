@@ -246,15 +246,28 @@ export function calculerValeursProfile(
   const imc = calculerIMC(profile.poids_kg, profile.taille_cm);
   const categorie_imc = getCategorieIMC(imc);
 
-  // Besoins énergétiques
-  const metabolisme_base = calculerMetabolismeBase(
-    profile.sexe,
-    profile.poids_kg,
-    profile.taille_cm,
-    age
-  );
+  // BMR (Métabolisme de base) : Manuel ou calculé
+  let bmr_kcal: number;
+  let bmr_source: "MANUEL" | "CALCULE";
+
+  if (profile.bmr_manuel_kcal && profile.bmr_manuel_kcal > 0) {
+    // Utiliser le BMR manuel fourni par l'utilisateur
+    bmr_kcal = profile.bmr_manuel_kcal;
+    bmr_source = "MANUEL";
+  } else {
+    // Calculer avec la formule de Mifflin-St Jeor
+    bmr_kcal = calculerMetabolismeBase(
+      profile.sexe,
+      profile.poids_kg,
+      profile.taille_cm,
+      age
+    );
+    bmr_source = "CALCULE";
+  }
+
+  // Besoins énergétiques totaux
   const besoins_energetiques_kcal = calculerBesoinsEnergetiques(
-    metabolisme_base,
+    bmr_kcal,
     profile.niveau_activite,
     profile.objectif
   );
@@ -286,6 +299,8 @@ export function calculerValeursProfile(
   return {
     imc,
     categorie_imc,
+    bmr_kcal,
+    bmr_source,
     besoins_energetiques_kcal,
     fc_max,
     ...zones,

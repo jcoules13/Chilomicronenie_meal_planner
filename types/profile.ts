@@ -60,7 +60,9 @@ export interface ConfigRepas {
 export interface ValeursCalculees {
   imc: number;
   categorie_imc: "MAIGREUR" | "NORMAL" | "SURPOIDS" | "OBESITE";
-  besoins_energetiques_kcal: number; // Métabolisme de base + activité
+  bmr_kcal: number; // BMR utilisé (manuel ou calculé)
+  bmr_source: "MANUEL" | "CALCULE"; // Source du BMR
+  besoins_energetiques_kcal: number; // BMR × activité + ajustement objectif
   fc_max: number; // Fréquence cardiaque maximale
   zone_cardio_brule_graisse: { min: number; max: number }; // Zone 2: 60-70% FC Max
   zone_cardio_aerobie: { min: number; max: number }; // Zone 3: 70-80% FC Max
@@ -104,6 +106,7 @@ export interface UserProfile {
   taille_cm: number;
   niveau_activite: NiveauActivite;
   objectif: ObjectifSante;
+  bmr_manuel_kcal?: number; // BMR mesuré (optionnel, remplace le calcul auto si fourni)
 
   // Contraintes santé
   contraintes_sante: ContraintesSante;

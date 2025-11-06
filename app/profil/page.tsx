@@ -262,6 +262,41 @@ export default function ProfilPage() {
                 </select>
               </div>
             </div>
+
+            {/* BMR Manuel (optionnel) */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  BMR mesuré (optionnel)
+                </label>
+                <Input
+                  type="number"
+                  min="800"
+                  max="4000"
+                  placeholder="Ex: 2000"
+                  value={profile.bmr_manuel_kcal || ""}
+                  onChange={(e) =>
+                    updateProfile({
+                      bmr_manuel_kcal: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
+                  className="w-40"
+                />
+                <p className="text-xs text-muted-foreground">
+                  💡 Si votre montre/balance indique un BMR précis (ex: 2000 kcal), entrez-le ici. Sinon, laissez vide pour utiliser le calcul automatique (Mifflin-St Jeor).
+                  {valeurs && valeurs.bmr_source === "CALCULE" && (
+                    <span className="block mt-1 font-medium">
+                      → BMR calculé actuellement : {valeurs.bmr_kcal} kcal
+                    </span>
+                  )}
+                  {valeurs && valeurs.bmr_source === "MANUEL" && (
+                    <span className="block mt-1 font-medium text-blue-600">
+                      ✓ Utilisation de votre BMR mesuré : {valeurs.bmr_kcal} kcal
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -502,6 +537,14 @@ export default function ProfilPage() {
                     Besoins énergétiques
                   </h3>
                   <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        BMR ({valeurs.bmr_source === "MANUEL" ? "mesuré" : "calculé"})
+                      </span>
+                      <span className={`font-medium ${valeurs.bmr_source === "MANUEL" ? "text-blue-600" : ""}`}>
+                        {valeurs.bmr_kcal} kcal
+                      </span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">
                         Besoins quotidiens
