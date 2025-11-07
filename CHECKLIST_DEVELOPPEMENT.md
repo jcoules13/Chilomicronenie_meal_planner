@@ -52,10 +52,81 @@
 
 ---
 
-### Phase 5 : Listes de Courses ⬜
-- [ ] 5.1 Génération auto (hebdo/mensuel)
-- [ ] 5.2 Interface (checkboxes + impression)
-- [ ] ✅ **Validation Phase 5** : Liste générée correcte, UI pratique
+### Phase 4.5 : Planning Hebdomadaire (EN COURS) 🔄
+
+#### Infrastructure & Types ✅
+- [x] 4.5.1 Types planning (`types/planning.ts`)
+  - [x] TypeRotation : CLASSIQUE, LEGERE, POISSON_PLUS, VIANDE_PLUS
+  - [x] Interface RotationProteine avec 4 rotations prédéfinies
+  - [x] Interface JourPlanning (7 jours)
+  - [x] Type ModeCreation : AUTO, PERSONNALISE, FRIGO
+  - [x] Interface PlanningHebdomadaire complète
+  - [x] Interface CreationPlanningEnCours
+- [x] 4.5.2 IndexedDB v3 avec store plannings_hebdomadaires
+- [x] 4.5.3 Navigation sidebar mise à jour
+  - [x] "Générer des menus" → "Gestion des Menus"
+  - [x] Ajout "Planning Hebdomadaire" avec icône CalendarCheck
+
+#### Refactoring "Gestion des Menus" ⬜
+- [ ] 4.5.4 Page `/app/menus/generer/page.tsx`
+  - [ ] Remplacer "Contraintes" → "Informations de votre profil"
+  - [ ] 3 gros boutons visuels :
+    - [ ] Bouton 1 : "Générer automatiquement" → `/menus/generer/auto`
+    - [ ] Bouton 2 : "Créer menu personnalisé" → `/menus/generer/personnalise`
+    - [ ] Bouton 3 : "Menu reste du frigo" → `/menus/generer/frigo`
+- [ ] 4.5.5 Déplacer logique auto-génération vers `/app/menus/generer/auto/page.tsx`
+
+#### Mode Personnalisé (Rotations) ⬜
+- [ ] 4.5.6 Page `/app/menus/generer/personnalise/page.tsx`
+  - [ ] Étape 1 : Choix rotation (4 cartes)
+  - [ ] Étape 2 : Sélection date début (DatePicker)
+  - [ ] Étape 3 : Sélection menus jour par jour
+    - [ ] Filtrage menus par protéine du jour
+    - [ ] Affichage cartes visuelles
+    - [ ] Navigation jours (précédent/suivant)
+    - [ ] Calcul automatique portions (70/30 split)
+  - [ ] Étape 4 : Validation planning
+    - [ ] Récapitulatif 7 jours
+    - [ ] Stats hebdomadaires
+    - [ ] Dialog OUI/NON
+    - [ ] Sauvegarde IndexedDB
+
+#### Page Planning Hebdomadaire ⬜
+- [ ] 4.5.7 Page `/app/planning-hebdomadaire/page.tsx`
+  - [ ] Affichage planning semaine en cours
+  - [ ] Vue 7 jours avec cards menus
+  - [ ] Stats hebdomadaires (calories, macros, moyennes)
+  - [ ] Bouton "Modifier le planning"
+  - [ ] Bouton "Générer liste de courses"
+  - [ ] Bouton "Archiver" (manuel)
+  - [ ] Archivage automatique fin de semaine
+
+#### Archives Plannings ⬜
+- [ ] 4.5.8 Page `/app/planning-hebdomadaire/archives/page.tsx`
+  - [ ] Liste plannings archivés
+  - [ ] Cards expandables avec détails
+  - [ ] Suppression individuelle
+  - [ ] Stats globales (total, ce mois)
+
+#### Mode Frigo (Placeholder) ⬜
+- [ ] 4.5.9 Page `/app/menus/generer/frigo/page.tsx`
+  - [ ] Message "En cours de développement"
+  - [ ] Description concept
+  - [ ] Bouton retour
+
+- [ ] ✅ **Validation Phase 4.5** : Planning hebdomadaire complet, rotations fonctionnelles, archivage OK
+
+---
+
+### Phase 5 : Listes de Courses ✅
+- [x] 5.1 Génération auto (hebdo/mensuel)
+- [x] 5.2 Interface (checkboxes + impression)
+- [x] 5.3 Système d'archivage
+  - [x] Dialog auto-détection 100% coché
+  - [x] Bouton "Nouvelle semaine"
+  - [x] Archives accessibles via /courses/archives
+  - [x] IndexedDB v2 avec store archives_courses
+- [x] ✅ **Validation Phase 5** : Liste générée correcte, UI pratique, archivage complet
 
 ---
 

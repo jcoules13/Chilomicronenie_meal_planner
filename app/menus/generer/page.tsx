@@ -1,129 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Wand2, Calendar, Save, Download, ShoppingCart, RefreshCw } from "lucide-react";
-import { Saison } from "@/types/aliment";
-import { genererSemaineMenus, exporterMenusMarkdown, genererListeCourses } from "@/lib/utils/menu-generator";
+import { Wand2, Sparkles, ChefHat, ArrowRight } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { MenuV31 } from "@/types/menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { create } from "@/lib/db/queries";
+import Link from "next/link";
 
-export default function GenererMenusPage() {
+export default function GestionMenusPage() {
   const { profile, isLoading: profileLoading } = useProfile();
-  const [dateDebut, setDateDebut] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [saisonsSelectionnees, setSaisonsSelectionnees] = useState<Saison[]>([
-    "Automne",
-    "Hiver",
-  ]);
-  const [menusGeneres, setMenusGeneres] = useState<MenuV31[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const saisons: Saison[] = ["Printemps", "Été", "Automne", "Hiver", "Toute année"];
-
-  const toggleSaison = (saison: Saison) => {
-    setSaisonsSelectionnees((prev) =>
-      prev.includes(saison)
-        ? prev.filter((s) => s !== saison)
-        : [...prev, saison]
-    );
-  };
-
-  const handleGenerer = async () => {
-    if (!profile) {
-      setError("Veuillez d'abord configurer votre profil utilisateur");
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-
-    try {
-      const menus = await genererSemaineMenus({
-        profile,
-        dateDebut: new Date(dateDebut),
-        saisons: saisonsSelectionnees.length > 0 ? saisonsSelectionnees : saisons,
-      });
-
-      setMenusGeneres(menus);
-    } catch (err) {
-      console.error("Erreur génération:", err);
-      setError(
-        err instanceof Error ? err.message : "Erreur lors de la génération"
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleSauvegarder = async () => {
-    try {
-      for (const menu of menusGeneres) {
-        await create<MenuV31>("menus", menu);
-      }
-      alert(`✅ ${menusGeneres.length} menus sauvegardés avec succès dans la base !`);
-    } catch (error) {
-      console.error("Erreur sauvegarde:", error);
-      alert("❌ Erreur lors de la sauvegarde des menus");
-    }
-  };
-
-  const handleExportMarkdown = () => {
-    try {
-      const markdown = exporterMenusMarkdown(menusGeneres);
-
-      // Créer un blob et télécharger
-      const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Menus_Semaine_${new Date().toISOString().split('T')[0]}.md`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      alert("✅ Export Markdown téléchargé !");
-    } catch (error) {
-      console.error("Erreur export:", error);
-      alert("❌ Erreur lors de l'export Markdown");
-    }
-  };
-
-  const handleGenererListeCourses = () => {
-    try {
-      const listeCourses = genererListeCourses(menusGeneres);
-
-      // Créer un blob et télécharger
-      const blob = new Blob([listeCourses], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Liste_Courses_${new Date().toISOString().split('T')[0]}.md`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      alert("✅ Liste de courses téléchargée !");
-    } catch (error) {
-      console.error("Erreur génération liste:", error);
-      alert("❌ Erreur lors de la génération de la liste de courses");
-    }
-  };
 
   if (profileLoading) {
     return (
-      <MainLayout title="Générer Menus">
+      <MainLayout title="Gestion des Menus">
         <div className="text-center py-12">
           <p className="text-muted-foreground">Chargement du profil...</p>
         </div>
@@ -133,7 +22,7 @@ export default function GenererMenusPage() {
 
   if (!profile) {
     return (
-      <MainLayout title="Générer Menus">
+      <MainLayout title="Gestion des Menus">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle>Profil manquant</CardTitle>
@@ -152,235 +41,193 @@ export default function GenererMenusPage() {
   }
 
   return (
-    <MainLayout title="Générateur de Menus">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Configuration */}
+    <MainLayout title="Gestion des Menus">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Informations profil */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wand2 className="h-5 w-5" />
-              Générer une semaine de menus
-            </CardTitle>
+            <CardTitle>Informations de votre profil</CardTitle>
             <CardDescription>
-              Génération automatique basée sur votre profil et les aliments disponibles
+              Vos besoins nutritionnels quotidiens
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Infos profil */}
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h3 className="font-semibold text-sm mb-2">Contraintes de votre profil</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Calories/jour :</span>
-                  <br />
-                  <span className="font-bold">
-                    {profile.valeurs_calculees?.besoins_energetiques_kcal || 2100} kcal
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Protéines :</span>
-                  <br />
-                  <span className="font-bold">
-                    {profile.valeurs_calculees?.macros_quotidiens.proteines_g || 170}g
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Lipides max :</span>
-                  <br />
-                  <span className="font-bold text-red-600">
-                    {profile.valeurs_calculees?.macros_quotidiens.lipides_g || 15}g
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Glucides :</span>
-                  <br />
-                  <span className="font-bold">
-                    {profile.valeurs_calculees?.macros_quotidiens.glucides_g || 280}g
-                  </span>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-xs text-muted-foreground mb-1">Calories/jour</div>
+                <div className="text-2xl font-bold">
+                  {profile.valeurs_calculees?.besoins_energetiques_kcal || 2100}
+                  <span className="text-sm font-normal ml-1">kcal</span>
                 </div>
               </div>
-              {profile.contraintes_sante.chylomicronemie && (
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-3">
-                  ℹ️ Régime chylomicronémie : Aliments filtrés (lipides &lt; 5g/100g), IG bas prioritaire
-                </p>
-              )}
-            </div>
-
-            {/* Options de génération */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="date-debut" className="mb-2 block">
-                  <Calendar className="h-4 w-4 inline mr-2" />
-                  Date de début
-                </Label>
-                <Input
-                  id="date-debut"
-                  type="date"
-                  value={dateDebut}
-                  onChange={(e) => setDateDebut(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label className="mb-2 block">Saisons préférées</Label>
-                <div className="flex flex-wrap gap-2">
-                  {saisons.map((saison) => (
-                    <Badge
-                      key={saison}
-                      variant={
-                        saisonsSelectionnees.includes(saison)
-                          ? "default"
-                          : "outline"
-                      }
-                      className="cursor-pointer"
-                      onClick={() => toggleSaison(saison)}
-                    >
-                      {saison}
-                    </Badge>
-                  ))}
+              <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="text-xs text-muted-foreground mb-1">Protéines</div>
+                <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  {profile.valeurs_calculees?.macros_quotidiens.proteines_g || 170}
+                  <span className="text-sm font-normal ml-1">g</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Sélectionnez une ou plusieurs saisons (vide = toutes)
-                </p>
               </div>
-            </div>
-
-            {/* Erreur */}
-            {error && (
               <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <div className="text-xs text-muted-foreground mb-1">Lipides max</div>
+                <div className="text-2xl font-bold text-red-700 dark:text-red-300">
+                  {profile.valeurs_calculees?.macros_quotidiens.lipides_g || 15}
+                  <span className="text-sm font-normal ml-1">g</span>
+                </div>
               </div>
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="text-xs text-muted-foreground mb-1">Glucides</div>
+                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                  {profile.valeurs_calculees?.macros_quotidiens.glucides_g || 280}
+                  <span className="text-sm font-normal ml-1">g</span>
+                </div>
+              </div>
+            </div>
+            {profile.contraintes_sante.chylomicronemie && (
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                ℹ️ <strong>Régime chylomicronémie actif</strong> : Les menus générés respecteront automatiquement les contraintes lipidiques strictes et l'index glycémique bas.
+              </p>
             )}
-
-            {/* Bouton génération */}
-            <Button
-              onClick={handleGenerer}
-              disabled={isGenerating}
-              size="lg"
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                  Génération en cours...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-5 w-5 mr-2" />
-                  Générer 7 jours de menus
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Résultats */}
-        {menusGeneres.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Menus générés ({menusGeneres.length})</CardTitle>
-              <CardDescription>
-                Prévisualisation de votre semaine de menus
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button onClick={handleSauvegarder} variant="default">
-                  <Save className="h-4 w-4 mr-2" />
-                  Sauvegarder dans la base
-                </Button>
-                <Button onClick={handleExportMarkdown} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Markdown
-                </Button>
-                <Button onClick={handleGenererListeCourses} variant="outline">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Liste de courses
-                </Button>
-              </div>
+        {/* Section choix du mode */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Gérer une semaine de menus</h2>
+          <p className="text-muted-foreground mb-6">
+            Choisissez comment vous souhaitez créer vos menus hebdomadaires
+          </p>
 
-              {/* Liste des menus */}
-              <div className="space-y-4">
-                {menusGeneres.map((menu, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 border rounded-lg bg-card"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-semibold">{menu.nom}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {menu.type_proteine} • {menu.saisons.join(", ")}
-                        </p>
-                      </div>
-                      <div className="text-right text-sm">
-                        <div className="font-medium">
-                          {menu.calories_cibles} kcal
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          P: {menu.proteines_cibles_g}g | L:{" "}
-                          <span className="text-red-600 font-bold">
-                            {menu.lipides_cibles_g}g
-                          </span>{" "}
-                          | G: {menu.glucides_cibles_g}g
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Aperçu repas détaillé avec quantités */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded">
-                        <div className="font-medium text-amber-900 dark:text-amber-100 mb-2">
-                          {menu.repas_1.nom} ({menu.repas_1.heure})
-                          <span className="ml-2 text-xs font-normal">
-                            {menu.repas_1.calories_cibles} kcal
-                          </span>
-                        </div>
-                        {menu.repas_1.composants.map((comp, i) => (
-                          <div key={i} className="mb-2">
-                            <div className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                              {comp.nom} ({comp.calories || 0} kcal)
-                            </div>
-                            <ul className="text-xs space-y-0.5 text-muted-foreground pl-3">
-                              {comp.ingredients.map((ing, j) => (
-                                <li key={j}>
-                                  - {ing.nom}: <span className="font-medium">{ing.quantite}{ing.unite}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded">
-                        <div className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                          {menu.repas_2.nom} ({menu.repas_2.heure})
-                          <span className="ml-2 text-xs font-normal">
-                            {menu.repas_2.calories_cibles} kcal
-                          </span>
-                        </div>
-                        {menu.repas_2.composants.map((comp, i) => (
-                          <div key={i} className="mb-2">
-                            <div className="text-xs font-semibold text-blue-800 dark:text-blue-200">
-                              {comp.nom} ({comp.calories || 0} kcal)
-                            </div>
-                            <ul className="text-xs space-y-0.5 text-muted-foreground pl-3">
-                              {comp.ingredients.map((ing, j) => (
-                                <li key={j}>
-                                  - {ing.nom}: <span className="font-medium">{ing.quantite}{ing.unite}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Mode 1 : Génération automatique */}
+            <Link href="/menus/generer/auto">
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-primary">
+                <CardHeader>
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/20 mb-4 mx-auto">
+                    <Wand2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  <CardTitle className="text-center">Génération Automatique</CardTitle>
+                  <CardDescription className="text-center">
+                    Laissez l'IA créer votre semaine complète en un clic
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm space-y-2 text-muted-foreground mb-4">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>7 jours de menus générés automatiquement</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Rotation automatique des protéines</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Respect strict de vos contraintes</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Rapide et simple</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" size="lg">
+                    Commencer
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Mode 2 : Création personnalisée */}
+            <Link href="/menus/generer/personnalise">
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-primary">
+                <CardHeader>
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/20 mb-4 mx-auto">
+                    <Sparkles className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <CardTitle className="text-center">Création Personnalisée</CardTitle>
+                  <CardDescription className="text-center">
+                    Choisissez vos menus jour par jour avec rotation de protéines
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm space-y-2 text-muted-foreground mb-4">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>4 rotations de protéines au choix</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Sélection manuelle des menus</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Portions calculées automatiquement</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Contrôle total sur vos choix</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" size="lg">
+                    Commencer
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Mode 3 : Reste du frigo */}
+            <Link href="/menus/generer/frigo">
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-primary relative">
+                <div className="absolute top-4 right-4 bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-xs font-semibold px-2 py-1 rounded">
+                  Bientôt
+                </div>
+                <CardHeader>
+                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 mb-4 mx-auto">
+                    <ChefHat className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <CardTitle className="text-center">Menu Reste du Frigo</CardTitle>
+                  <CardDescription className="text-center">
+                    Créez des menus à partir de ce que vous avez déjà
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm space-y-2 text-muted-foreground mb-4">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Saisie des ingrédients disponibles</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Suggestions de menus réalisables</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Liste de courses complémentaire</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Réduction du gaspillage</span>
+                    </li>
+                  </ul>
+                  <Button className="w-full" size="lg">
+                    Découvrir
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+
+        {/* Note informative */}
+        <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <p className="text-sm text-center">
+              💡 <strong>Astuce :</strong> Après avoir créé vos menus, retrouvez-les dans <Link href="/planning-hebdomadaire" className="underline font-semibold">Planning Hebdomadaire</Link> pour générer automatiquement votre liste de courses.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );
