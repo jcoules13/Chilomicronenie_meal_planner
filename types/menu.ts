@@ -68,6 +68,47 @@ export interface BudgetLipides {
 }
 
 /**
+ * Instructions de cuisson détaillées pour un composant
+ */
+export interface InstructionsCuisson {
+  methode: string; // "Poêle antiadhésive", "Four", "Vapeur", "Bouilli"
+  temperature_celsius?: number; // 180, 200, etc.
+  duree_minutes?: string; // "15-20" ou "15"
+  etapes: string[]; // Liste des étapes numérotées
+  notes_importantes?: string[]; // Warnings: "SANS huile", "Ne pas dépasser 70°C"
+}
+
+/**
+ * Informations de conservation pour un composant ou menu
+ */
+export interface InformationsConservation {
+  frais_jours?: number; // Nombre de jours au frigo
+  frais_temperature?: string; // "0-2°C", "4°C max"
+  congelation_mois?: number; // Nombre de mois au congélateur
+  decongélation?: string; // "Au frigo 12h avant", "Jamais à température ambiante"
+  securite?: string[]; // Consignes de sécurité: "70°C minimum à cœur"
+  notes?: string; // Notes additionnelles
+}
+
+/**
+ * Critères d'achat pour un ingrédient
+ */
+export interface CritereAchat {
+  type: "OBLIGATOIRE" | "RECOMMANDE" | "EVITER";
+  description: string; // "5% MG maximum", "Label VBF"
+  icon?: string; // "✅", "❌", "⚠️"
+}
+
+/**
+ * Avantage nutritionnel d'un menu ou composant
+ */
+export interface AvantageNutritionnel {
+  titre: string; // "Riche en fer héminique"
+  description: string; // "Meilleure absorption que le fer végétal"
+  icon?: string; // "🔴", "💪", etc.
+}
+
+/**
  * Composant d'un repas (selon structure v3.1)
  */
 export interface ComposantRepas {
@@ -75,10 +116,17 @@ export interface ComposantRepas {
   description: string; // Description du composant
   ingredients: IngredientMenu[];
   lipides?: LipideRecette[]; // Lipides utilisés pour ce composant
-  cuisson?: string; // Méthode de cuisson
+  cuisson?: string; // Méthode de cuisson (simple)
+  cuisson_detaillee?: InstructionsCuisson; // Instructions de cuisson détaillées
   assaisonnement?: string; // Assaisonnement spécifique
   calories?: number; // Calories du composant
+  proteines_g?: number; // Protéines du composant
+  lipides_g?: number; // Lipides du composant
+  glucides_g?: number; // Glucides du composant
   variantes_saison?: VarianteSaisonniere[]; // Variantes selon saison
+  conservation?: InformationsConservation; // Informations de conservation
+  criteres_achat?: CritereAchat[]; // Critères d'achat pour l'ingrédient principal
+  notes_importantes?: string[]; // Warnings et notes critiques
 }
 
 /**
@@ -88,6 +136,8 @@ export interface VarianteSaisonniere {
   saison: Saison;
   ingredients: IngredientMenu[];
   notes?: string;
+  cuisson_detaillee?: InstructionsCuisson; // Instructions de cuisson spécifiques à la variante
+  description?: string; // Description de la variante
 }
 
 /**
@@ -210,6 +260,14 @@ export interface MenuV31 {
   // Préparation
   preparation_avance?: string[]; // Conseils préparation à l'avance
   variantes_express?: string[]; // Alternatives rapides
+
+  // Informations enrichies
+  formule_adaptation_bmr?: string; // Formule explicite pour adapter au BMR
+  avantages_nutritionnels?: AvantageNutritionnel[]; // Avantages du menu
+  conservation_generale?: InformationsConservation; // Conservation globale du menu
+  notes_securite?: string[]; // Consignes de sécurité alimentaire
+  criteres_achat_generaux?: CritereAchat[]; // Critères d'achat généraux
+  frequence_recommandee?: string; // Fréquence d'utilisation recommandée (texte libre)
 
   // Metadata
   date_creation: Date;

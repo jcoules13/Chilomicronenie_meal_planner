@@ -29,6 +29,10 @@ import {
   TypeProteine,
   FrequenceMenu,
   CIBLES_MENU_V31,
+  InstructionsCuisson,
+  InformationsConservation,
+  CritereAchat,
+  AvantageNutritionnel,
 } from "@/types/menu";
 import { Saison } from "@/types/aliment";
 import { TypeLipide, LipideRecette } from "@/types/soupe";
@@ -91,6 +95,14 @@ export function parseMenuV31Markdown(
     const preparation_avance = extractPreparationAvance(body);
     const variantes_express = extractVariantesExpress(body);
 
+    // Extraire informations enrichies
+    const formule_adaptation_bmr = extractFormuleAdaptationBMR(body);
+    const avantages_nutritionnels = extractAvantagesNutritionnels(body);
+    const conservation_generale = extractInformationsConservation(body);
+    const notes_securite = extractNotesSecutite(body);
+    const criteres_achat_generaux = extractCriteresAchat(body);
+    const frequence_recommandee = extractFrequenceRecommandee(body);
+
     // Extraire tags
     const tags = extractTags(body, frontmatter);
 
@@ -126,6 +138,14 @@ export function parseMenuV31Markdown(
 
       preparation_avance,
       variantes_express,
+
+      // Informations enrichies
+      formule_adaptation_bmr,
+      avantages_nutritionnels,
+      conservation_generale,
+      notes_securite,
+      criteres_achat_generaux,
+      frequence_recommandee,
 
       date_creation: new Date(),
       date_modification: new Date(),
@@ -278,17 +298,41 @@ function parseComposant(
   // Parser lipides
   const lipides = parseLipidesComposant(composantContent);
 
-  // Extraire cuisson
+  // Extraire cuisson (simple)
   const cuissonMatch = composantContent.match(/\*\*Cuisson[^:]*\*\*\s*:\s*([^\n]+)/i);
   const cuisson = cuissonMatch ? cuissonMatch[1].trim() : undefined;
+
+  // Extraire cuisson détaillée
+  const cuisson_detaillee = extractInstructionsCuisson(composantContent);
 
   // Extraire assaisonnement
   const assaisonnementMatch = composantContent.match(/\*\*Assaisonnement[^:]*\*\*\s*:\s*([^\n]+)/i);
   const assaisonnement = assaisonnementMatch ? assaisonnementMatch[1].trim() : undefined;
 
-  // Extraire calories (approximatif)
+  // Extraire calories et macros
   const caloriesMatch = composantContent.match(/\((\d+)\s*kcal/i);
   const calories = caloriesMatch ? parseInt(caloriesMatch[1]) : undefined;
+
+  const proteinesMatch = composantContent.match(/[~]?(\d+)g?\s*protéines/i);
+  const proteines_g = proteinesMatch ? parseInt(proteinesMatch[1]) : undefined;
+
+  const lipidesMatch = composantContent.match(/(\d+)g?\s*lipides/i);
+  const lipides_g = lipidesMatch ? parseInt(lipidesMatch[1]) : undefined;
+
+  const glucidesMatch = composantContent.match(/(\d+)g?\s*glucides/i);
+  const glucides_g = glucidesMatch ? parseInt(glucidesMatch[1]) : undefined;
+
+  // Extraire conservation
+  const conservation = extractInformationsConservation(composantContent);
+
+  // Extraire critères d'achat
+  const criteres_achat = extractCriteresAchat(composantContent);
+
+  // Extraire notes importantes
+  const notes_importantes_match = composantContent.match(/\*\*VÉRIFIER\*\*\s*:?\s*\n([\s\S]*?)(?=\n###|####|##|\*\*[A-Z]|$)/i);
+  const notes_importantes = notes_importantes_match
+    ? notes_importantes_match[1].split('\n').filter(line => line.trim().length > 3).map(line => line.trim())
+    : undefined;
 
   return {
     nom: nomComposant.toUpperCase(),
@@ -296,8 +340,15 @@ function parseComposant(
     ingredients,
     lipides,
     cuisson,
+    cuisson_detaillee,
     assaisonnement,
     calories,
+    proteines_g,
+    lipides_g,
+    glucides_g,
+    conservation,
+    criteres_achat,
+    notes_importantes,
   };
 }
 
@@ -328,10 +379,19 @@ function parseComposantAvecVariantes(
     const notesMatch = varianteContent.match(/\*\*([^*]+)\*\*/);
     const notes = notesMatch ? notesMatch[1].trim() : undefined;
 
+    // Extraire instructions de cuisson pour la variante
+    const cuisson_detaillee = extractInstructionsCuisson(varianteContent);
+
+    // Extraire description (première ligne après le titre)
+    const descriptionMatch = varianteContent.match(/^([^\n]+)/);
+    const description = descriptionMatch ? descriptionMatch[1].trim() : undefined;
+
     variantes.push({
       saison,
       ingredients,
       notes,
+      cuisson_detaillee,
+      description,
     });
   }
 
@@ -759,4 +819,252 @@ function extractTags(body: string, frontmatter: any): string[] {
   }
 
   return [...new Set(tags)]; // Dédupliquer
+}
+
+/**
+ * Extraire les instructions de cuisson détaillées
+ */
+function extractInstructionsCuisson(content: string): InstructionsCuisson | undefined {
+  // Chercher section **Cuisson** :
+  const cuissonRegex = /\*\*Cuisson\*\*\s*:?\s*\n([\s\S]*?)(?=\n\*\*[A-Z]|###|####|$)/i;
+  const match = content.match(cuissonRegex);
+
+  if (!match) return undefined;
+
+  const cuissonContent = match[1];
+
+  // Extraire méthode
+  const methodeMatch = cuissonContent.match(/(?:^|\n)\s*-?\s*([^:\n]+?)(?:\s*:|\s*\(|\s*\d)/);
+  const methode = methodeMatch ? methodeMatch[1].trim() : "Cuisson";
+
+  // Extraire température
+  const tempMatch = cuissonContent.match(/(\d+)\s*°C/);
+  const temperature_celsius = tempMatch ? parseInt(tempMatch[1]) : undefined;
+
+  // Extraire durée
+  const dureeMatch = cuissonContent.match(/(\d+(?:-\d+)?)\s*min/);
+  const duree_minutes = dureeMatch ? dureeMatch[1] : undefined;
+
+  // Extraire étapes (lignes numérotées ou avec tirets)
+  const etapes: string[] = [];
+  const etapesRegex = /(?:^|\n)\s*(?:\d+\.|[-•])\s*([^\n]+)/g;
+  let etapeMatch;
+  while ((etapeMatch = etapesRegex.exec(cuissonContent)) !== null) {
+    const etape = etapeMatch[1].trim();
+    if (etape && etape.length > 3) {
+      etapes.push(etape);
+    }
+  }
+
+  // Extraire notes importantes (lignes en gras ou avec ⚠️/❌/✅)
+  const notes_importantes: string[] = [];
+  const notesRegex = /(?:⚠️|❌|✅|\*\*[A-Z]+\*\*)\s*([^\n]+)/g;
+  let noteMatch;
+  while ((noteMatch = notesRegex.exec(cuissonContent)) !== null) {
+    const note = noteMatch[1].trim().replace(/\*\*/g, "");
+    if (note && !notes_importantes.includes(note)) {
+      notes_importantes.push(note);
+    }
+  }
+
+  if (etapes.length === 0 && !temperature_celsius && !duree_minutes) {
+    return undefined;
+  }
+
+  return {
+    methode,
+    temperature_celsius,
+    duree_minutes,
+    etapes,
+    notes_importantes: notes_importantes.length > 0 ? notes_importantes : undefined,
+  };
+}
+
+/**
+ * Extraire les informations de conservation
+ */
+function extractInformationsConservation(content: string): InformationsConservation | undefined {
+  // Chercher section Conservation
+  const conservationRegex = /(?:###|####)?\s*(?:Conservation|CONSERVATION)[^\n]*\n([\s\S]*?)(?=\n###|####|##|$)/i;
+  const match = content.match(conservationRegex);
+
+  if (!match) return undefined;
+
+  const conservationContent = match[1];
+
+  // Extraire durée frigo
+  const frigoDaysMatch = conservationContent.match(/(\d+)(?:-(\d+))?\s*(?:jours?|j)\s*(?:au\s*)?(?:frigo|réfrigérateur)/i);
+  const frais_jours = frigoDaysMatch ? parseInt(frigoDaysMatch[2] || frigoDaysMatch[1]) : undefined;
+
+  // Extraire température frigo
+  const frigoTempMatch = conservationContent.match(/(\d+(?:-\d+)?)\s*°C/);
+  const frais_temperature = frigoTempMatch ? frigoTempMatch[1] + "°C" : undefined;
+
+  // Extraire durée congélation
+  const congelationMatch = conservationContent.match(/(\d+)\s*mois\s*(?:au\s*)?(?:congélateur|congel)/i);
+  const congelation_mois = congelationMatch ? parseInt(congelationMatch[1]) : undefined;
+
+  // Extraire décongélation
+  const decongelationMatch = conservationContent.match(/(?:Décongélation|décongel)[^\n]*:\s*([^\n]+)/i);
+  const decongélation = decongelationMatch ? decongelationMatch[1].trim() : undefined;
+
+  // Extraire sécurité (température de cuisson)
+  const securite: string[] = [];
+  const securiteRegex = /(\d+\s*°C[^\n]+)/g;
+  let securiteMatch;
+  while ((securiteMatch = securiteRegex.exec(conservationContent)) !== null) {
+    securite.push(securiteMatch[1].trim());
+  }
+
+  if (!frais_jours && !congelation_mois && !decongélation && securite.length === 0) {
+    return undefined;
+  }
+
+  return {
+    frais_jours,
+    frais_temperature,
+    congelation_mois,
+    decongélation,
+    securite: securite.length > 0 ? securite : undefined,
+  };
+}
+
+/**
+ * Extraire les critères d'achat
+ */
+function extractCriteresAchat(content: string): CritereAchat[] | undefined {
+  const criteres: CritereAchat[] = [];
+
+  // Chercher section VÉRIFIER ou critères avec ✅/❌
+  const criteresRegex = /([✅❌⚠️])\s*(?:\*\*)?([^\n]+?)(?:\*\*)?(?:\n|$)/g;
+  let match;
+
+  while ((match = criteresRegex.exec(content)) !== null) {
+    const icon = match[1];
+    const description = match[2].trim();
+
+    let type: "OBLIGATOIRE" | "RECOMMANDE" | "EVITER";
+    if (icon === "✅") {
+      type = "OBLIGATOIRE";
+    } else if (icon === "⚠️") {
+      type = "RECOMMANDE";
+    } else {
+      type = "EVITER";
+    }
+
+    criteres.push({
+      type,
+      description,
+      icon,
+    });
+  }
+
+  return criteres.length > 0 ? criteres : undefined;
+}
+
+/**
+ * Extraire les avantages nutritionnels
+ */
+function extractAvantagesNutritionnels(content: string): AvantageNutritionnel[] | undefined {
+  const avantages: AvantageNutritionnel[] = [];
+
+  // Chercher section AVANTAGES
+  const avantagesRegex = /##\s*💡\s*(?:AVANTAGES|Avantages)[^\n]*\n([\s\S]*?)(?=\n##|$)/i;
+  const match = content.match(avantagesRegex);
+
+  if (!match) return undefined;
+
+  const avantagesContent = match[1];
+
+  // Extraire items (numérotés ou avec tirets)
+  const itemsRegex = /(?:^|\n)\s*(?:\d+\.|[-•])\s*\*\*([^*]+)\*\*\s*:?\s*([^\n]+)/g;
+  let itemMatch;
+
+  while ((itemMatch = itemsRegex.exec(avantagesContent)) !== null) {
+    const titre = itemMatch[1].trim();
+    const description = itemMatch[2].trim();
+
+    avantages.push({
+      titre,
+      description,
+    });
+  }
+
+  return avantages.length > 0 ? avantages : undefined;
+}
+
+/**
+ * Extraire la formule d'adaptation BMR
+ */
+function extractFormuleAdaptationBMR(content: string): string | undefined {
+  // Chercher section ADAPTATION AU BMR
+  const bmrRegex = /##\s*🔄\s*ADAPTATION\s+AU\s+BMR[^\n]*\n([\s\S]*?)(?=\n##|$)/i;
+  const match = content.match(bmrRegex);
+
+  if (!match) return undefined;
+
+  const bmrContent = match[1];
+
+  // Chercher formule (entre ``` ou lignes avec =)
+  const formuleMatch = bmrContent.match(/(?:```\n?)([\s\S]*?)(?:```)|([^\n]*=[\s\S]*?(?=\n\n|$))/);
+
+  if (formuleMatch) {
+    return (formuleMatch[1] || formuleMatch[2]).trim();
+  }
+
+  // Sinon prendre tout le contenu de la section
+  return bmrContent.trim().substring(0, 500); // Limiter à 500 caractères
+}
+
+/**
+ * Extraire fréquence recommandée (texte)
+ */
+function extractFrequenceRecommandee(content: string): string | undefined {
+  // Chercher "Fréquence recommandée" ou "fréquence"
+  const frequenceRegex = /(?:Fréquence\s+recommandée|fréquence)[^\n]*:\s*\n?\s*[-•*]?\s*\*\*([^*]+)\*\*/i;
+  const match = content.match(frequenceRegex);
+
+  if (match) {
+    return match[1].trim();
+  }
+
+  return undefined;
+}
+
+/**
+ * Extraire notes de sécurité alimentaire
+ */
+function extractNotesSecutite(content: string): string[] | undefined {
+  const notes: string[] = [];
+
+  // Chercher section "Cuisson sécuritaire" ou similaires
+  const securiteRegex = /###\s*(?:Cuisson\s+sécuritaire|Sécurité|SÉCURITÉ)[^\n]*\n([\s\S]*?)(?=\n###|####|##|$)/i;
+  const match = content.match(securiteRegex);
+
+  if (match) {
+    const securiteContent = match[1];
+
+    // Extraire lignes avec tirets ou puces
+    const itemsRegex = /(?:^|\n)\s*[-•*]\s*\*\*([^*]+)\*\*\s*:?\s*([^\n]+)/g;
+    let itemMatch;
+
+    while ((itemMatch = itemsRegex.exec(securiteContent)) !== null) {
+      const titre = itemMatch[1].trim();
+      const description = itemMatch[2].trim();
+      notes.push(`${titre}: ${description}`);
+    }
+  }
+
+  // Chercher aussi les warnings généraux avec ⚠️
+  const warningsRegex = /⚠️\s*\*\*[^*]+\*\*\s*:\s*([^\n]+)/g;
+  let warningMatch;
+
+  while ((warningMatch = warningsRegex.exec(content)) !== null) {
+    const warning = warningMatch[1].trim();
+    if (warning.length > 10 && !notes.includes(warning)) {
+      notes.push(warning);
+    }
+  }
+
+  return notes.length > 0 ? notes : undefined;
 }

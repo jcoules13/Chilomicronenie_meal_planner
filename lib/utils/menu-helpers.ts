@@ -35,6 +35,7 @@ export function getProteineInfo(type: TypeProteine): {
  */
 export function getFrequenceInfo(frequence: FrequenceMenu): {
   label: string;
+  icon: string;
   color: string;
   bgClass: string;
 } {
@@ -42,36 +43,42 @@ export function getFrequenceInfo(frequence: FrequenceMenu): {
     case "QUOTIDIEN":
       return {
         label: "Quotidien",
+        icon: "✅",
         color: "text-green-700",
         bgClass: "bg-green-100",
       };
     case "HEBDOMADAIRE":
       return {
         label: "Hebdomadaire",
+        icon: "📅",
         color: "text-blue-700",
         bgClass: "bg-blue-100",
       };
     case "SEMAINE_4":
       return {
         label: "Semaine 4 uniquement",
+        icon: "⚠️",
         color: "text-purple-700",
         bgClass: "bg-purple-100",
       };
     case "OCCASIONNEL":
       return {
         label: "Occasionnel",
+        icon: "🔸",
         color: "text-gray-700",
         bgClass: "bg-gray-100",
       };
     case "SPECIAL":
       return {
         label: "Spécial",
+        icon: "⭐",
         color: "text-amber-700",
         bgClass: "bg-amber-100",
       };
     default:
       return {
         label: frequence,
+        icon: "📋",
         color: "text-gray-700",
         bgClass: "bg-gray-100",
       };
