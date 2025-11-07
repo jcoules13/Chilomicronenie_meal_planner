@@ -18,6 +18,7 @@ import {
   creerRepas2Template,
   creerMenuV31Template,
 } from "./menu-templates-v31";
+import { getEtatJourDansProtocole } from "./fasting-protocol";
 import { nanoid } from "nanoid";
 
 interface OptionsGeneration {
@@ -113,12 +114,21 @@ function selectionnerAleatoire<T>(liste: T[]): T | null {
  */
 async function genererMenuJour(
   numeroJour: number,
+  date: Date,
   typeProteine: TypeProteine,
   aliments: Aliment[],
   options: OptionsGeneration
-): Promise<MenuV31> {
+): Promise<MenuV31 | null> {
   const { profile, saisons } = options;
   const contrainteChylo = profile.contraintes_sante.chylomicronemie;
+
+  // Vérifier l'état du jour selon le protocole de jeûne
+  const etatJour = getEtatJourDansProtocole(date, profile.config_jeune);
+
+  // Si en jeûne : ne pas générer de menu
+  if (etatJour.etat === "EN_JEUNE") {
+    return null; // Skip ce jour (jeûne = pas de repas)
+  }
 
   // REPAS 1 : Salade + Protéine + Légumes + Féculents + Dessert
   const salade = creerComposantSaladeVinegree();
@@ -176,12 +186,28 @@ async function genererMenuJour(
   const dessert1 = creerComposantDessert("skyr_myrtilles");
 
   // Calculer répartition des macros depuis le profil
-  const macrosJour = {
+  let macrosJour = {
     calories: profile.valeurs_calculees?.besoins_energetiques_kcal || 2100,
     proteines_g: profile.valeurs_calculees?.macros_quotidiens.proteines_g || 170,
     lipides_g: profile.valeurs_calculees?.macros_quotidiens.lipides_g || 15,
     glucides_g: profile.valeurs_calculees?.macros_quotidiens.glucides_g || 280,
   };
+
+  // ⚠️ RÉALIMENTATION : Adapter les macros selon le protocole
+  if (etatJour.etat === "REALIMENTATION" && etatJour.infos_jour) {
+    const protocole = etatJour.infos_jour;
+
+    // Override calories et lipides selon le protocole de réalimentation
+    macrosJour.calories = protocole.calories_cibles;
+    macrosJour.lipides_g = protocole.limite_lipides_g;
+
+    // Recalculer les glucides pour maintenir l'équilibre calorique
+    // Calories = (P × 4) + (L × 9) + (G × 4)
+    const kcal_proteines = macrosJour.proteines_g * 4;
+    const kcal_lipides = macrosJour.lipides_g * 9;
+    const kcal_restantes = macrosJour.calories - kcal_proteines - kcal_lipides;
+    macrosJour.glucides_g = Math.max(0, Math.round(kcal_restantes / 4));
+  }
 
   // Déterminer le ratio de répartition selon le preset
   let ratioRepas1 = 0.6; // Par défaut MATIN_PLUS (60/40)
@@ -280,9 +306,23 @@ async function genererMenuJour(
 
   const repas2 = creerRepas2Template(proteine2, legumes2, legumineuses2, soupe, macrosRepas2);
 
+  // Créer tags adaptés à l'état du jour
+  const tags = ["Généré auto", saisons.join(", ")];
+  let nomMenu = `Menu J${numeroJour} - ${typeProteine}`;
+
+  if (etatJour.etat === "REALIMENTATION" && etatJour.jour_realimentation) {
+    tags.push(`Réalimentation J+${etatJour.jour_realimentation}`);
+    nomMenu = `Menu J${numeroJour} - ${typeProteine} (Réalimentation J+${etatJour.jour_realimentation})`;
+
+    // Ajouter les alertes du protocole si présentes
+    if (etatJour.infos_jour?.alerte) {
+      tags.push(etatJour.infos_jour.alerte);
+    }
+  }
+
   // Créer le menu complet
   const menuTemplate = creerMenuV31Template({
-    nom: `Menu J${numeroJour} - ${typeProteine}`,
+    nom: nomMenu,
     numero: numeroJour,
     type_proteine: typeProteine,
     frequence: typeProteine === "Poisson Gras" ? "SEMAINE_4" : "HEBDOMADAIRE",
@@ -290,7 +330,7 @@ async function genererMenuJour(
     repas_1: repas1,
     repas_2: repas2,
     ig_moyen: 42,
-    tags: ["Généré auto", saisons.join(", ")],
+    tags,
     macros_profil: {
       calories_totales: macrosJour.calories,
       proteines_totales_g: macrosJour.proteines_g,
@@ -329,6 +369,10 @@ export async function genererSemaineMenus(
   const menus: MenuV31[] = [];
 
   for (let jour = 1; jour <= 7; jour++) {
+    // Calculer la date du jour
+    const dateJour = new Date(options.dateDebut);
+    dateJour.setDate(dateJour.getDate() + (jour - 1));
+
     const typeProteine = ROTATION_PROTEINES[jour - 1];
 
     // Semaine 4 : remplacer Poisson Maigre par Poisson Gras
@@ -337,8 +381,12 @@ export async function genererSemaineMenus(
         ? "Poisson Gras"
         : typeProteine;
 
-    const menu = await genererMenuJour(jour, typeFinal, aliments, options);
-    menus.push(menu);
+    const menu = await genererMenuJour(jour, dateJour, typeFinal, aliments, options);
+
+    // Si menu = null (jour de jeûne), skip ce jour
+    if (menu !== null) {
+      menus.push(menu);
+    }
   }
 
   return menus;
