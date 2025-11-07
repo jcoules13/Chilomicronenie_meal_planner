@@ -23,123 +23,135 @@ export interface JourRealimentation {
 
 /**
  * Protocole de réalimentation pour jeûne de 4 jours (7 jours de reprise)
+ *
+ * ⚠️ CRITIQUE : Protocole médical pour CHYLOMICRONÉMIE
+ * - J+1 à J+3 : Lipides QUASI-NULS (0-5g max) pour éviter choc métabolique
+ * - Jamais dépasser limite habituelle (10g/jour pour TG élevés)
+ * - Les valeurs incluent TOUS les lipides (alimentaires + compléments comme EPAX)
  */
 const PROTOCOLE_REALIMENTATION_4J: JourRealimentation[] = [
   {
     jour: 1,
-    calories_cibles: 800,
-    limite_lipides_g: 10,
+    calories_cibles: 600,
+    limite_lipides_g: 2,
     mct_autorise: false,
     ajout_lipides_autorise: false,
-    description: "Reprise très progressive",
+    description: "Reprise très progressive - Lipides quasi-nuls",
     alerte:
-      "⚠️ CRITIQUE : AUCUNE matière grasse ajoutée (même pas MCT). Lipides naturels uniquement.",
+      "🚨 CRITIQUE : 0-2g lipides TOTAUX max (compléments inclus). AUCUNE matière grasse ajoutée.",
   },
   {
     jour: 2,
-    calories_cibles: 1500,
-    limite_lipides_g: 15,
+    calories_cibles: 800,
+    limite_lipides_g: 3,
     mct_autorise: false,
     ajout_lipides_autorise: false,
-    description: "Augmentation calorique progressive",
+    description: "Augmentation calorique - Lipides minimaux",
     alerte:
-      "⚠️ ATTENTION : Toujours AUCUNE matière grasse ajoutée. Lipides naturels seulement.",
+      "⚠️ ATTENTION : 0-3g lipides TOTAUX max (compléments inclus). AUCUNE matière grasse ajoutée.",
   },
   {
     jour: 3,
-    calories_cibles: 1800,
-    limite_lipides_g: 20,
-    mct_autorise: true,
-    ajout_lipides_autorise: true,
-    description: "Réintroduction MCT (2 c. à café max)",
-    alerte: "✓ Vous pouvez réintroduire l'huile MCT C8/C10 progressivement.",
+    calories_cibles: 1000,
+    limite_lipides_g: 5,
+    mct_autorise: false,
+    ajout_lipides_autorise: false,
+    description: "Progression calorique - Lipides toujours minimaux",
+    alerte:
+      "⚠️ IMPORTANT : 0-5g lipides TOTAUX max (compléments inclus). AUCUNE matière grasse ajoutée.",
   },
   {
     jour: 4,
-    calories_cibles: 1950,
-    limite_lipides_g: 20,
+    calories_cibles: 1200,
+    limite_lipides_g: 7,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Stabilisation progressive",
+    description: "Réintroduction MCT uniquement",
+    alerte: "✓ Huile MCT C8/C10 autorisée (ne forme pas de chylomicrons). Max 7g lipides totaux.",
   },
   {
     jour: 5,
-    calories_cibles: 2000,
-    limite_lipides_g: 22,
+    calories_cibles: 1500,
+    limite_lipides_g: 8,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Retour progressif à la normale",
+    description: "Progression vers limite normale",
   },
   {
     jour: 6,
-    calories_cibles: 2050,
-    limite_lipides_g: 23,
+    calories_cibles: 1800,
+    limite_lipides_g: 9,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Quasi normale",
+    description: "Quasi retour à la normale",
   },
   {
     jour: 7,
     calories_cibles: 2100,
-    limite_lipides_g: 25,
+    limite_lipides_g: 10,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Fin de réalimentation - Contrôle TG à J+7",
+    description: "Retour limite normale - Contrôle TG OBLIGATOIRE",
     alerte:
-      "🩺 CONTRÔLE : Vérifier les TG aujourd'hui pour valider la réussite du protocole.",
+      "🩺 CONTRÔLE MÉDICAL : Vérifier les TG aujourd'hui pour valider la réussite du protocole.",
   },
 ];
 
 /**
  * Protocole de réalimentation pour jeûne de 3 jours (5 jours de reprise)
+ *
+ * ⚠️ CRITIQUE : Protocole médical pour CHYLOMICRONÉMIE
+ * - J+1 à J+3 : Lipides QUASI-NULS (0-5g max) pour éviter choc métabolique
+ * - Jamais dépasser limite habituelle (10g/jour pour TG élevés)
+ * - Les valeurs incluent TOUS les lipides (alimentaires + compléments comme EPAX)
  */
 const PROTOCOLE_REALIMENTATION_3J: JourRealimentation[] = [
   {
     jour: 1,
-    calories_cibles: 800,
-    limite_lipides_g: 10,
+    calories_cibles: 600,
+    limite_lipides_g: 2,
     mct_autorise: false,
     ajout_lipides_autorise: false,
-    description: "Reprise très progressive",
+    description: "Reprise très progressive - Lipides quasi-nuls",
     alerte:
-      "⚠️ CRITIQUE : AUCUNE matière grasse ajoutée (même pas MCT). Lipides naturels uniquement.",
+      "🚨 CRITIQUE : 0-2g lipides TOTAUX max (compléments inclus). AUCUNE matière grasse ajoutée.",
   },
   {
     jour: 2,
-    calories_cibles: 1500,
-    limite_lipides_g: 15,
+    calories_cibles: 800,
+    limite_lipides_g: 3,
     mct_autorise: false,
     ajout_lipides_autorise: false,
-    description: "Augmentation calorique progressive",
+    description: "Augmentation calorique - Lipides minimaux",
     alerte:
-      "⚠️ ATTENTION : Toujours AUCUNE matière grasse ajoutée. Lipides naturels seulement.",
+      "⚠️ ATTENTION : 0-3g lipides TOTAUX max (compléments inclus). AUCUNE matière grasse ajoutée.",
   },
   {
     jour: 3,
-    calories_cibles: 1800,
-    limite_lipides_g: 20,
+    calories_cibles: 1200,
+    limite_lipides_g: 7,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Réintroduction MCT (2 c. à café max)",
-    alerte: "✓ Vous pouvez réintroduire l'huile MCT C8/C10 progressivement.",
+    description: "Réintroduction MCT uniquement",
+    alerte: "✓ Huile MCT C8/C10 autorisée (ne forme pas de chylomicrons). Max 7g lipides totaux.",
   },
   {
     jour: 4,
-    calories_cibles: 2000,
-    limite_lipides_g: 22,
+    calories_cibles: 1500,
+    limite_lipides_g: 8,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Retour progressif à la normale",
+    description: "Progression vers limite normale",
   },
   {
     jour: 5,
     calories_cibles: 2100,
-    limite_lipides_g: 25,
+    limite_lipides_g: 10,
     mct_autorise: true,
     ajout_lipides_autorise: true,
-    description: "Fin de réalimentation - Contrôle TG à J+5",
+    description: "Retour limite normale - Contrôle TG OBLIGATOIRE",
     alerte:
-      "🩺 CONTRÔLE : Vérifier les TG aujourd'hui pour valider la réussite du protocole.",
+      "🩺 CONTRÔLE MÉDICAL : Vérifier les TG aujourd'hui pour valider la réussite du protocole.",
   },
 ];
 
