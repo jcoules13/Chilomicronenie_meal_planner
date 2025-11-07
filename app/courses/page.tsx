@@ -224,19 +224,54 @@ export default function CoursesPage() {
   };
 
   const handleCompletionDialogDelete = async () => {
-    // Option "OUI" : Effacer la liste
-    clearChecked();
-    setShowCompletionDialog(false);
+    // Option "OUI" : Effacer la liste (supprimer tous les menus)
+    try {
+      // Supprimer tous les menus
+      for (const menu of menus) {
+        await deleteById("menus", menu.id);
+      }
+
+      // Effacer localStorage
+      localStorage.removeItem("liste_courses_checked");
+
+      // Réinitialiser l'état
+      setMenus([]);
+      setIngredients(new Map());
+      setHasShownDialogForCurrentList(false);
+      setShowCompletionDialog(false);
+
+      alert("✅ Liste effacée avec succès !\n\nRendez-vous dans 'Générer des menus' pour créer votre prochaine semaine.");
+    } catch (error) {
+      console.error("Erreur suppression:", error);
+      alert("❌ Erreur lors de la suppression");
+      setShowCompletionDialog(false);
+    }
   };
 
   const handleCompletionDialogArchive = async () => {
-    // Option "NON" : Archiver la liste
+    // Option "NON" : Archiver la liste puis supprimer tous les menus
     const success = await archiveCurrentList();
 
     if (success) {
-      // Après archivage, effacer la liste actuelle
-      clearChecked();
-      alert("✅ Liste archivée avec succès !\n\nVous pouvez la consulter dans 'Accès Archives'.");
+      // Après archivage, supprimer tous les menus
+      try {
+        for (const menu of menus) {
+          await deleteById("menus", menu.id);
+        }
+
+        // Effacer localStorage
+        localStorage.removeItem("liste_courses_checked");
+
+        // Réinitialiser l'état
+        setMenus([]);
+        setIngredients(new Map());
+        setHasShownDialogForCurrentList(false);
+
+        alert("✅ Liste archivée avec succès !\n\nVous pouvez la consulter dans 'Accès Archives'.");
+      } catch (error) {
+        console.error("Erreur suppression menus:", error);
+        alert("❌ Liste archivée mais erreur lors de la suppression des menus");
+      }
     }
 
     setShowCompletionDialog(false);
