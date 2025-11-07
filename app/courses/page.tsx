@@ -5,31 +5,51 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MenuV31 } from "@/types/menu";
-import { getAll } from "@/lib/db/queries";
+import { IngredientCourse, ArchiveListeCourses } from "@/types/courses";
+import { getAll, create, deleteById } from "@/lib/db/queries";
 import { genererListeCourses } from "@/lib/utils/menu-generator";
-import { Download, RefreshCw, Trash2 } from "lucide-react";
-
-interface IngredientCourse {
-  nom: string;
-  quantite_totale: number;
-  unite: string;
-  categorie: string;
-  checked: boolean;
-}
+import { Download, RefreshCw, Trash2, Calendar, Archive, Sparkles } from "lucide-react";
+import { nanoid } from "nanoid";
+import Link from "next/link";
 
 export default function CoursesPage() {
   const [menus, setMenus] = useState<MenuV31[]>([]);
   const [ingredients, setIngredients] = useState<Map<string, IngredientCourse>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [hasShownDialogForCurrentList, setHasShownDialogForCurrentList] = useState(false);
 
   // Charger les menus et générer la liste
   useEffect(() => {
     loadMenusAndGenerateList();
   }, []);
 
+  // Détecter quand tous les items sont cochés
+  useEffect(() => {
+    const totalItems = ingredients.size;
+    const checkedItems = Array.from(ingredients.values()).filter((i) => i.checked).length;
+
+    if (totalItems > 0 && checkedItems === totalItems && !hasShownDialogForCurrentList) {
+      setShowCompletionDialog(true);
+      setHasShownDialogForCurrentList(true);
+    }
+  }, [ingredients, hasShownDialogForCurrentList]);
+
   const loadMenusAndGenerateList = async () => {
     setIsLoading(true);
+    setHasShownDialogForCurrentList(false);
+
     try {
       const menusFromDb = await getAll<MenuV31>("menus");
       setMenus(menusFromDb);
@@ -147,6 +167,79 @@ export default function CoursesPage() {
     });
     setIngredients(newMap);
     localStorage.removeItem("liste_courses_checked");
+    setHasShownDialogForCurrentList(false);
+  };
+
+  const archiveCurrentList = async () => {
+    try {
+      const totalItems = ingredients.size;
+      const checkedItems = Array.from(ingredients.values()).filter((i) => i.checked).length;
+      const progression = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+
+      const archive: ArchiveListeCourses = {
+        id: nanoid(),
+        date_creation: new Date(),
+        date_archive: new Date(),
+        nombre_menus: menus.length,
+        ingredients: Array.from(ingredients.values()),
+        total_items: totalItems,
+        items_coches: checkedItems,
+        progression,
+      };
+
+      await create<ArchiveListeCourses>("archives_courses", archive);
+      console.log("✅ Liste archivée avec succès");
+      return true;
+    } catch (error) {
+      console.error("❌ Erreur archivage:", error);
+      alert("Erreur lors de l'archivage de la liste");
+      return false;
+    }
+  };
+
+  const handleNouvelleSemaine = async () => {
+    if (!confirm("⚠️ Êtes-vous sûr de vouloir démarrer une nouvelle semaine ?\n\nCette action va :\n• Supprimer TOUS les menus actuels\n• Effacer la liste de courses\n• Réinitialiser les checkboxes\n\nCette action est IRRÉVERSIBLE.")) {
+      return;
+    }
+
+    try {
+      // Supprimer tous les menus
+      for (const menu of menus) {
+        await deleteById("menus", menu.id);
+      }
+
+      // Effacer localStorage
+      localStorage.removeItem("liste_courses_checked");
+
+      // Réinitialiser l'état
+      setMenus([]);
+      setIngredients(new Map());
+      setHasShownDialogForCurrentList(false);
+
+      alert("✅ Nouvelle semaine démarrée !\n\nRendez-vous dans 'Générer des menus' pour créer votre prochaine semaine.");
+    } catch (error) {
+      console.error("Erreur nouvelle semaine:", error);
+      alert("❌ Erreur lors de la réinitialisation");
+    }
+  };
+
+  const handleCompletionDialogDelete = async () => {
+    // Option "OUI" : Effacer la liste
+    clearChecked();
+    setShowCompletionDialog(false);
+  };
+
+  const handleCompletionDialogArchive = async () => {
+    // Option "NON" : Archiver la liste
+    const success = await archiveCurrentList();
+
+    if (success) {
+      // Après archivage, effacer la liste actuelle
+      clearChecked();
+      alert("✅ Liste archivée avec succès !\n\nVous pouvez la consulter dans 'Accès Archives'.");
+    }
+
+    setShowCompletionDialog(false);
   };
 
   const handleExportMarkdown = () => {
@@ -213,6 +306,12 @@ export default function CoursesPage() {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/courses/archives">
+                    <Archive className="h-4 w-4 mr-2" />
+                    Accès Archives
+                  </Link>
+                </Button>
                 <Button onClick={loadMenusAndGenerateList} variant="outline" size="sm">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Actualiser
@@ -224,6 +323,10 @@ export default function CoursesPage() {
                 <Button onClick={clearChecked} variant="outline" size="sm">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Tout décocher
+                </Button>
+                <Button onClick={handleNouvelleSemaine} variant="destructive" size="sm">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Nouvelle semaine
                 </Button>
               </div>
             </div>
@@ -237,8 +340,14 @@ export default function CoursesPage() {
               <div className="text-center py-12">
                 <p className="text-lg font-medium">Aucun menu sauvegardé</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Générez des menus dans la section "Menus" pour créer une liste de courses
+                  Générez des menus dans la section "Générer des menus" pour créer une liste de courses
                 </p>
+                <Button asChild className="mt-4">
+                  <Link href="/menus/generer">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Générer des menus
+                  </Link>
+                </Button>
               </div>
             ) : (
               <>
@@ -320,6 +429,32 @@ export default function CoursesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de complétion automatique */}
+      <AlertDialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>🎉 Vous avez fini vos courses !</AlertDialogTitle>
+            <AlertDialogDescription>
+              Félicitations, vous avez coché tous les items de votre liste.
+              <br /><br />
+              <strong>Voulez-vous effacer cette liste ?</strong>
+              <br /><br />
+              • <strong>OUI</strong> : La liste sera effacée définitivement
+              <br />
+              • <strong>NON</strong> : La liste sera archivée (vous pourrez la consulter plus tard)
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCompletionDialogArchive}>
+              NON (Archiver)
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCompletionDialogDelete}>
+              OUI (Effacer)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
