@@ -206,19 +206,19 @@ export const PRESETS_REPARTITION: Record<
   },
   MATIN_PLUS: {
     label: "Matin+ (60/40)",
-    description: "Plus de calories le matin",
+    description: "Plus de calories le matin (Repas 1 à 11h)",
   },
   MATIN_TRES_PLUS: {
     label: "Matin++ (70/30)",
-    description: "Beaucoup plus de calories le matin",
+    description: "Beaucoup plus de calories le matin (Repas 1 à 11h)",
   },
   SOIR_PLUS: {
-    label: "Soir+ (40/60)",
-    description: "Plus de calories le soir",
+    label: "Midi+ (40/60)",
+    description: "Plus de calories le midi (Repas 2 à 17h)",
   },
   SOIR_TRES_PLUS: {
-    label: "Soir++ (30/70)",
-    description: "Beaucoup plus de calories le soir",
+    label: "Midi++ (30/70)",
+    description: "Beaucoup plus de calories le midi (Repas 2 à 17h)",
   },
   CUSTOM: {
     label: "Personnalisé",

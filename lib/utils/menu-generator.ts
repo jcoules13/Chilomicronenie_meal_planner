@@ -28,6 +28,21 @@ interface OptionsGeneration {
 }
 
 /**
+ * Formater une date en français avec jour de la semaine
+ * Ex: "Vendredi 7 Nov"
+ */
+function formaterDateMenu(date: Date): string {
+  const jours = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+  const mois = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+
+  const jourSemaine = jours[date.getDay()];
+  const numeroJour = date.getDate();
+  const nomMois = mois[date.getMonth()];
+
+  return `${jourSemaine} ${numeroJour} ${nomMois}`;
+}
+
+/**
  * Rotation des protéines pour une semaine (7 jours)
  * Semaine 4 : Poisson gras (au lieu de maigre)
  */
@@ -118,16 +133,100 @@ async function genererMenuJour(
   typeProteine: TypeProteine,
   aliments: Aliment[],
   options: OptionsGeneration
-): Promise<MenuV31 | null> {
+): Promise<MenuV31> {
   const { profile, saisons } = options;
   const contrainteChylo = profile.contraintes_sante.chylomicronemie;
+
+  // Formater la date pour le nom du menu
+  const dateFormatee = formaterDateMenu(date);
 
   // Vérifier l'état du jour selon le protocole de jeûne
   const etatJour = getEtatJourDansProtocole(date, profile.config_jeune);
 
-  // Si en jeûne : ne pas générer de menu
+  // Si en jeûne : créer un menu spécial "Jeûne"
   if (etatJour.etat === "EN_JEUNE") {
-    return null; // Skip ce jour (jeûne = pas de repas)
+    const jourJeune = etatJour.jour_semaine || 1;
+    const dureeJeune = profile.config_jeune?.duree_jours || 4;
+
+    // Créer un menu minimal pour afficher le jeûne
+    const menuJeune: MenuV31 = {
+      id: nanoid(),
+      nom: `🚫 JEÛNE - ${dateFormatee} (Jour ${jourJeune}/${dureeJeune})`,
+      numero: numeroJour,
+      type_proteine: "Végétarien", // Par défaut
+      categorie: "Jeûne",
+      frequence: "HEBDOMADAIRE",
+      saisons,
+
+      calories_cibles: 0,
+      proteines_cibles_g: 0,
+      lipides_cibles_g: 0,
+      glucides_cibles_g: 0,
+
+      repas_1: {
+        nom: "REPAS 1",
+        heure: "---",
+        calories_cibles: 0,
+        proteines_cibles_g: 0,
+        lipides_cibles_g: 0,
+        glucides_cibles_g: 0,
+        composants: [],
+        budget_lipides: {
+          total_g: 0,
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 0,
+          autres_g: 0,
+          pct_mct: 0,
+          pct_formation_chylomicrons: 0,
+        },
+      },
+
+      repas_2: {
+        nom: "REPAS 2",
+        heure: "---",
+        calories_cibles: 0,
+        proteines_cibles_g: 0,
+        lipides_cibles_g: 0,
+        glucides_cibles_g: 0,
+        composants: [],
+        budget_lipides: {
+          total_g: 0,
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 0,
+          autres_g: 0,
+          pct_mct: 0,
+          pct_formation_chylomicrons: 0,
+        },
+      },
+
+      budget_lipides_journee: {
+        total_g: 0,
+        mct_coco_g: 0,
+        huile_olive_g: 0,
+        huile_sesame_g: 0,
+        naturels_proteines_g: 0,
+        autres_g: 0,
+        pct_mct: 0,
+        pct_formation_chylomicrons: 0,
+      },
+
+      ig_moyen: 0,
+      adaptatif_bmr: false,
+      bmr_reference: 0,
+      variantes_saison_count: 0,
+      compatible_chylomicronemie: true,
+      version: "1.0",
+      tags: ["JEÛNE", `Jour ${jourJeune}/${dureeJeune}`, "🚫 Aucun repas"],
+
+      date_creation: new Date(),
+      date_modification: new Date(),
+    };
+
+    return menuJeune;
   }
 
   // REPAS 1 : Salade + Protéine + Légumes + Féculents + Dessert
@@ -308,11 +407,11 @@ async function genererMenuJour(
 
   // Créer tags adaptés à l'état du jour
   const tags = ["Généré auto", saisons.join(", ")];
-  let nomMenu = `Menu J${numeroJour} - ${typeProteine}`;
+  let nomMenu = `Menu ${dateFormatee} - ${typeProteine}`;
 
   if (etatJour.etat === "REALIMENTATION" && etatJour.jour_realimentation) {
     tags.push(`Réalimentation J+${etatJour.jour_realimentation}`);
-    nomMenu = `Menu J${numeroJour} - ${typeProteine} (Réalimentation J+${etatJour.jour_realimentation})`;
+    nomMenu = `Menu ${dateFormatee} - ${typeProteine} (Réalimentation J+${etatJour.jour_realimentation})`;
 
     // Ajouter les alertes du protocole si présentes
     if (etatJour.infos_jour?.alerte) {
@@ -382,11 +481,7 @@ export async function genererSemaineMenus(
         : typeProteine;
 
     const menu = await genererMenuJour(jour, dateJour, typeFinal, aliments, options);
-
-    // Si menu = null (jour de jeûne), skip ce jour
-    if (menu !== null) {
-      menus.push(menu);
-    }
+    menus.push(menu);
   }
 
   return menus;

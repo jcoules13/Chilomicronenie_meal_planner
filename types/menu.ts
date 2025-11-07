@@ -35,6 +35,7 @@ export type CategorieMenu =
   | "Poisson Maigre"
   | "Poisson Gras"
   | "Végétarien"
+  | "Jeûne"
   | "Végétalien"
   | "Autre";
 
@@ -229,6 +230,7 @@ export const CATEGORIES_MENU: Record<CategorieMenu, string> = {
   "Poisson Maigre": "Cabillaud, Merlan, Sole",
   "Poisson Gras": "Saumon, Maquereau (limité)",
   Végétarien: "Avec oeufs et produits laitiers",
+  Jeûne: "Jour de jeûne - Aucun repas",
   Végétalien: "100% végétal",
   Autre: "Mixte ou autre catégorie",
 };
