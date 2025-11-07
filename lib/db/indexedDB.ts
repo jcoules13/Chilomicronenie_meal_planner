@@ -1,5 +1,5 @@
 const DB_NAME = "nutrition_app";
-const DB_VERSION = 2; // v2: Ajout archives_courses
+const DB_VERSION = 3; // v3: Ajout plannings_hebdomadaires
 
 export interface DBStore {
   name: string;
@@ -63,6 +63,15 @@ export const STORES: DBStore[] = [
     indexes: [
       { name: "date_archive", keyPath: "date_archive", unique: false },
       { name: "date_creation", keyPath: "date_creation", unique: false },
+    ],
+  },
+  {
+    name: "plannings_hebdomadaires",
+    keyPath: "id",
+    indexes: [
+      { name: "date_debut_semaine", keyPath: "date_debut_semaine", unique: false },
+      { name: "date_creation", keyPath: "date_creation", unique: false },
+      { name: "est_archive", keyPath: "est_archive", unique: false },
     ],
   },
 ];
