@@ -339,19 +339,38 @@ async function genererMenuJour(
       ratioRepas2 = 0.4;
   }
 
+  // ⚠️ SÉQUESTRATION SPLANCHNIQUE : Protéines TOUJOURS 70/30 (Repas 1/Repas 2)
+  // Pour maximiser la disponibilité des acides aminés pour les muscles
+  // Les calories suivent le preset, mais les protéines sont fixes à 70/30
+  const proteinesRepas1 = Math.round(macrosJour.proteines_g * 0.7); // FIXE 70%
+  const proteinesRepas2 = Math.round(macrosJour.proteines_g * 0.3); // FIXE 30%
+
   const macrosRepas1 = {
     calories_cibles: Math.round(macrosJour.calories * ratioRepas1),
-    proteines_cibles_g: Math.round(macrosJour.proteines_g * ratioRepas1),
+    proteines_cibles_g: proteinesRepas1, // ✅ FIXE 70% pour séquestration splanchnique
     lipides_cibles_g: Math.round(macrosJour.lipides_g * ratioRepas1),
-    glucides_cibles_g: Math.round(macrosJour.glucides_g * ratioRepas1),
+    glucides_cibles_g: 0, // Calculé après
   };
 
   const macrosRepas2 = {
     calories_cibles: Math.round(macrosJour.calories * ratioRepas2),
-    proteines_cibles_g: Math.round(macrosJour.proteines_g * ratioRepas2),
+    proteines_cibles_g: proteinesRepas2, // ✅ FIXE 30% pour séquestration splanchnique
     lipides_cibles_g: Math.round(macrosJour.lipides_g * ratioRepas2),
-    glucides_cibles_g: Math.round(macrosJour.glucides_g * ratioRepas2),
+    glucides_cibles_g: 0, // Calculé après
   };
+
+  // Recalculer les glucides pour atteindre les calories cibles
+  // Formule : Calories = (Protéines × 4) + (Lipides × 9) + (Glucides × 4)
+  // Donc : Glucides = (Calories - Protéines×4 - Lipides×9) / 4
+  const kcalProteinesRepas1 = macrosRepas1.proteines_cibles_g * 4;
+  const kcalLipidesRepas1 = macrosRepas1.lipides_cibles_g * 9;
+  const kcalRestantesRepas1 = macrosRepas1.calories_cibles - kcalProteinesRepas1 - kcalLipidesRepas1;
+  macrosRepas1.glucides_cibles_g = Math.max(0, Math.round(kcalRestantesRepas1 / 4));
+
+  const kcalProteinesRepas2 = macrosRepas2.proteines_cibles_g * 4;
+  const kcalLipidesRepas2 = macrosRepas2.lipides_cibles_g * 9;
+  const kcalRestantesRepas2 = macrosRepas2.calories_cibles - kcalProteinesRepas2 - kcalLipidesRepas2;
+  macrosRepas2.glucides_cibles_g = Math.max(0, Math.round(kcalRestantesRepas2 / 4));
 
   const repas1 = creerRepas1Template(
     proteine1,
