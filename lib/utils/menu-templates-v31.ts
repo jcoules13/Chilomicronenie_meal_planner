@@ -325,7 +325,13 @@ export function creerRepas1Template(
   legumes: ComposantRepas,
   feculents: ComposantRepas,
   salade?: ComposantRepas,
-  dessert?: ComposantRepas
+  dessert?: ComposantRepas,
+  macros?: {
+    calories_cibles: number;
+    proteines_cibles_g: number;
+    lipides_cibles_g: number;
+    glucides_cibles_g: number;
+  }
 ): RepasStructureV31 {
   const composants: ComposantRepas[] = [
     salade || creerComposantSaladeVinegree(),
@@ -356,10 +362,10 @@ export function creerRepas1Template(
   return {
     nom: "REPAS 1",
     heure: "11h00",
-    calories_cibles: CIBLES_MENU_V31.REPAS_1_KCAL,
-    proteines_cibles_g: CIBLES_MENU_V31.REPAS_1_PROTEINES_G,
-    lipides_cibles_g: CIBLES_MENU_V31.REPAS_1_LIPIDES_G,
-    glucides_cibles_g: CIBLES_MENU_V31.REPAS_1_GLUCIDES_G,
+    calories_cibles: macros?.calories_cibles ?? CIBLES_MENU_V31.REPAS_1_KCAL,
+    proteines_cibles_g: macros?.proteines_cibles_g ?? CIBLES_MENU_V31.REPAS_1_PROTEINES_G,
+    lipides_cibles_g: macros?.lipides_cibles_g ?? CIBLES_MENU_V31.REPAS_1_LIPIDES_G,
+    glucides_cibles_g: macros?.glucides_cibles_g ?? CIBLES_MENU_V31.REPAS_1_GLUCIDES_G,
     composants,
     budget_lipides,
   };
@@ -372,7 +378,13 @@ export function creerRepas2Template(
   proteine: ComposantRepas,
   legumes: ComposantRepas,
   legumineuses: ComposantRepas,
-  soupe?: ComposantRepas
+  soupe?: ComposantRepas,
+  macros?: {
+    calories_cibles: number;
+    proteines_cibles_g: number;
+    lipides_cibles_g: number;
+    glucides_cibles_g: number;
+  }
 ): RepasStructureV31 {
   const composants: ComposantRepas[] = [
     soupe || creerComposantSoupeMaison(),
@@ -402,10 +414,10 @@ export function creerRepas2Template(
   return {
     nom: "REPAS 2",
     heure: "17h00",
-    calories_cibles: CIBLES_MENU_V31.REPAS_2_KCAL,
-    proteines_cibles_g: CIBLES_MENU_V31.REPAS_2_PROTEINES_G,
-    lipides_cibles_g: CIBLES_MENU_V31.REPAS_2_LIPIDES_G,
-    glucides_cibles_g: CIBLES_MENU_V31.REPAS_2_GLUCIDES_G,
+    calories_cibles: macros?.calories_cibles ?? CIBLES_MENU_V31.REPAS_2_KCAL,
+    proteines_cibles_g: macros?.proteines_cibles_g ?? CIBLES_MENU_V31.REPAS_2_PROTEINES_G,
+    lipides_cibles_g: macros?.lipides_cibles_g ?? CIBLES_MENU_V31.REPAS_2_LIPIDES_G,
+    glucides_cibles_g: macros?.glucides_cibles_g ?? CIBLES_MENU_V31.REPAS_2_GLUCIDES_G,
     composants,
     budget_lipides,
   };
@@ -424,6 +436,12 @@ export function creerMenuV31Template(params: {
   repas_2: RepasStructureV31;
   ig_moyen?: number;
   tags?: string[];
+  macros_profil?: {
+    calories_totales: number;
+    proteines_totales_g: number;
+    lipides_totaux_g: number;
+    glucides_totaux_g: number;
+  };
 }): Omit<MenuV31, "id" | "date_creation" | "date_modification"> {
   // Calculer budget lipides journée
   const budget_journee = calculerBudgetLipides(
@@ -446,6 +464,15 @@ export function creerMenuV31Template(params: {
     categorie = "Poisson Gras";
   }
 
+  // Utiliser les macros du profil ou les valeurs par défaut
+  const calories_cibles = params.macros_profil?.calories_totales ?? CIBLES_MENU_V31.TOTAL_KCAL;
+  const proteines_cibles_g = params.macros_profil?.proteines_totales_g ?? CIBLES_MENU_V31.TOTAL_PROTEINES_G;
+  const lipides_cibles_g = params.macros_profil?.lipides_totaux_g ??
+    (params.frequence === "SEMAINE_4"
+      ? CIBLES_MENU_V31.TOTAL_LIPIDES_POISSON_GRAS_G
+      : CIBLES_MENU_V31.TOTAL_LIPIDES_G);
+  const glucides_cibles_g = params.macros_profil?.glucides_totaux_g ?? CIBLES_MENU_V31.TOTAL_GLUCIDES_G;
+
   return {
     nom: params.nom,
     numero: params.numero,
@@ -454,12 +481,10 @@ export function creerMenuV31Template(params: {
     frequence: params.frequence,
     saisons: params.saisons,
 
-    calories_cibles: CIBLES_MENU_V31.TOTAL_KCAL,
-    proteines_cibles_g: CIBLES_MENU_V31.TOTAL_PROTEINES_G,
-    lipides_cibles_g: params.frequence === "SEMAINE_4"
-      ? CIBLES_MENU_V31.TOTAL_LIPIDES_POISSON_GRAS_G
-      : CIBLES_MENU_V31.TOTAL_LIPIDES_G,
-    glucides_cibles_g: CIBLES_MENU_V31.TOTAL_GLUCIDES_G,
+    calories_cibles,
+    proteines_cibles_g,
+    lipides_cibles_g,
+    glucides_cibles_g,
 
     repas_1: params.repas_1,
     repas_2: params.repas_2,

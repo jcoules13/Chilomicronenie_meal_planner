@@ -175,12 +175,66 @@ async function genererMenuJour(
   // Dessert
   const dessert1 = creerComposantDessert("skyr_myrtilles");
 
+  // Calculer répartition des macros depuis le profil
+  const macrosJour = {
+    calories: profile.valeurs_calculees?.besoins_energetiques_kcal || 2100,
+    proteines_g: profile.valeurs_calculees?.macros_quotidiens.proteines_g || 170,
+    lipides_g: profile.valeurs_calculees?.macros_quotidiens.lipides_g || 15,
+    glucides_g: profile.valeurs_calculees?.macros_quotidiens.glucides_g || 280,
+  };
+
+  // Déterminer le ratio de répartition selon le preset
+  let ratioRepas1 = 0.6; // Par défaut MATIN_PLUS (60/40)
+  let ratioRepas2 = 0.4;
+
+  switch (profile.preset_repartition) {
+    case "EQUILIBRE":
+      ratioRepas1 = 0.5;
+      ratioRepas2 = 0.5;
+      break;
+    case "MATIN_PLUS":
+      ratioRepas1 = 0.6;
+      ratioRepas2 = 0.4;
+      break;
+    case "MATIN_TRES_PLUS":
+      ratioRepas1 = 0.7;
+      ratioRepas2 = 0.3;
+      break;
+    case "SOIR_PLUS": // "Midi+" selon l'utilisateur (Repas 2 = 17h)
+      ratioRepas1 = 0.4;
+      ratioRepas2 = 0.6;
+      break;
+    case "SOIR_TRES_PLUS": // "Midi++" selon l'utilisateur
+      ratioRepas1 = 0.3;
+      ratioRepas2 = 0.7;
+      break;
+    default:
+      // CUSTOM ou autre : utiliser 60/40 par défaut
+      ratioRepas1 = 0.6;
+      ratioRepas2 = 0.4;
+  }
+
+  const macrosRepas1 = {
+    calories_cibles: Math.round(macrosJour.calories * ratioRepas1),
+    proteines_cibles_g: Math.round(macrosJour.proteines_g * ratioRepas1),
+    lipides_cibles_g: Math.round(macrosJour.lipides_g * ratioRepas1),
+    glucides_cibles_g: Math.round(macrosJour.glucides_g * ratioRepas1),
+  };
+
+  const macrosRepas2 = {
+    calories_cibles: Math.round(macrosJour.calories * ratioRepas2),
+    proteines_cibles_g: Math.round(macrosJour.proteines_g * ratioRepas2),
+    lipides_cibles_g: Math.round(macrosJour.lipides_g * ratioRepas2),
+    glucides_cibles_g: Math.round(macrosJour.glucides_g * ratioRepas2),
+  };
+
   const repas1 = creerRepas1Template(
     proteine1,
     legumes1,
     feculents1,
     salade,
-    dessert1
+    dessert1,
+    macrosRepas1
   );
 
   // REPAS 2 : Soupe + Protéine + Légumes + Légumineuses
@@ -224,7 +278,7 @@ async function genererMenuJour(
   // Légumineuses REPAS 2
   const legumineuses2 = creerComposantFeculents("lentilles_corail", 60);
 
-  const repas2 = creerRepas2Template(proteine2, legumes2, legumineuses2, soupe);
+  const repas2 = creerRepas2Template(proteine2, legumes2, legumineuses2, soupe, macrosRepas2);
 
   // Créer le menu complet
   const menuTemplate = creerMenuV31Template({
@@ -237,6 +291,12 @@ async function genererMenuJour(
     repas_2: repas2,
     ig_moyen: 42,
     tags: ["Généré auto", saisons.join(", ")],
+    macros_profil: {
+      calories_totales: macrosJour.calories,
+      proteines_totales_g: macrosJour.proteines_g,
+      lipides_totaux_g: macrosJour.lipides_g,
+      glucides_totaux_g: macrosJour.glucides_g,
+    },
   });
 
   // Ajouter métadonnées

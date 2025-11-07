@@ -447,3 +447,102 @@ export function getResumeProtocoleJeune(config: ConfigJeune | undefined): string
 
   return `Cycle normal (${config.semaine_jeune} configurée pour jeûne)`;
 }
+
+/**
+ * Détermine l'état d'une date donnée selon le protocole de jeûne
+ * Cette fonction calcule automatiquement si une date tombe pendant :
+ * - Le jeûne (début de la semaine configurée)
+ * - La réalimentation (jours suivant le jeûne)
+ * - Normal (reste du cycle)
+ */
+export function getEtatJourDansProtocole(
+  date: Date,
+  config: ConfigJeune | undefined
+): {
+  etat: EtatJeune;
+  jour_realimentation?: number;
+  infos_jour?: JourRealimentation;
+  jour_semaine?: number; // 1-7 (Lundi-Dimanche)
+} {
+  if (!config || !config.actif || !config.date_debut_cycle) {
+    return { etat: "INACTIF" };
+  }
+
+  // Calculer le jour du cycle (1-28)
+  const debut_cycle = new Date(config.date_debut_cycle);
+  const jours_ecoules = Math.floor(
+    (date.getTime() - debut_cycle.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const jour_cycle = (jours_ecoules % 28) + 1;
+
+  // Déterminer la semaine du cycle (S1, S2, S3, S4)
+  let semaine: SemaineCycle;
+  if (jour_cycle <= 7) semaine = "S1";
+  else if (jour_cycle <= 14) semaine = "S2";
+  else if (jour_cycle <= 21) semaine = "S3";
+  else semaine = "S4";
+
+  // Calculer le jour de la semaine (1-7, où 1 = Lundi)
+  const jour_semaine = ((jour_cycle - 1) % 7) + 1;
+
+  // Si c'est la semaine de jeûne configurée
+  if (semaine === config.semaine_jeune) {
+    // Les 4 premiers jours de la semaine = jeûne (Lundi-Jeudi)
+    if (jour_semaine <= config.duree_jours) {
+      return {
+        etat: "EN_JEUNE",
+        jour_semaine,
+      };
+    }
+
+    // Jours suivants = réalimentation
+    const jour_realimentation = jour_semaine - config.duree_jours;
+    const nb_jours_realimentation = getNombreJoursRealimentation(config.duree_jours);
+
+    if (jour_realimentation <= nb_jours_realimentation) {
+      const protocole = getProtocoleRealimentation(config.duree_jours);
+      const infos_jour = protocole[jour_realimentation - 1];
+
+      return {
+        etat: "REALIMENTATION",
+        jour_realimentation,
+        infos_jour,
+        jour_semaine,
+      };
+    }
+  }
+
+  // Si la semaine suivante après le jeûne, la réalimentation peut continuer
+  // Par exemple : Jeûne S2 (4j) -> Réalimentation J+1 à J+7
+  // Si jeûne = S2 Lundi-Jeudi, alors Vendredi-Dimanche S2 = J+1 à J+3
+  // Et Lundi-Jeudi S3 = J+4 à J+7
+  const semaine_index = semaine === "S1" ? 0 : semaine === "S2" ? 1 : semaine === "S3" ? 2 : 3;
+  const semaine_jeune_index = config.semaine_jeune === "S1" ? 0 : config.semaine_jeune === "S2" ? 1 : config.semaine_jeune === "S3" ? 2 : 3;
+
+  // Vérifier si on est dans la semaine suivant le jeûne
+  if (semaine_index === (semaine_jeune_index + 1) % 4) {
+    const nb_jours_realimentation = getNombreJoursRealimentation(config.duree_jours);
+    const jours_realimentation_semaine_jeune = 7 - config.duree_jours; // Ex: 7-4 = 3 jours
+    const jours_restants_realimentation = nb_jours_realimentation - jours_realimentation_semaine_jeune;
+
+    // Si la réalimentation continue dans cette semaine
+    if (jour_semaine <= jours_restants_realimentation) {
+      const jour_realimentation = jours_realimentation_semaine_jeune + jour_semaine;
+      const protocole = getProtocoleRealimentation(config.duree_jours);
+      const infos_jour = protocole[jour_realimentation - 1];
+
+      return {
+        etat: "REALIMENTATION",
+        jour_realimentation,
+        infos_jour,
+        jour_semaine,
+      };
+    }
+  }
+
+  // Sinon, cycle normal
+  return {
+    etat: "INACTIF",
+    jour_semaine,
+  };
+}
