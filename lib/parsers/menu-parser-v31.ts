@@ -523,18 +523,110 @@ function extractNomFromFilename(filename?: string): string | null {
 }
 
 function parseTypeProteine(value: any, warnings: string[]): TypeProteine {
+  if (!value) {
+    warnings.push("⚠️ Type protéine manquant, utilisation de 'Poulet' par défaut");
+    return "Poulet";
+  }
+
+  // Normaliser la valeur : trim + lowercase pour comparaison
+  const normalized = String(value).trim().toLowerCase();
+
+  // Mapping étendu avec toutes les variantes possibles (casse, accents, espaces)
   const mapping: Record<string, TypeProteine> = {
+    // Poulet - variantes
+    "poulet": "Poulet",
+    "POULET": "Poulet",
     "Poulet": "Poulet",
+    "chicken": "Poulet",
+
+    // Dinde - variantes
+    "dinde": "Dinde",
+    "DINDE": "Dinde",
     "Dinde": "Dinde",
+    "turkey": "Dinde",
+
+    // Boeuf - variantes (avec et sans accent, avec "maigre")
+    "boeuf": "Boeuf",
+    "bœuf": "Boeuf",
+    "BOEUF": "Boeuf",
+    "BŒUF": "Boeuf",
     "Boeuf": "Boeuf",
     "Bœuf": "Boeuf",
-    "Bœuf Maigre": "Boeuf",
+    "boeuf maigre": "Boeuf",
+    "bœuf maigre": "Boeuf",
     "Boeuf Maigre": "Boeuf",
+    "Bœuf Maigre": "Boeuf",
+    "BOEUF MAIGRE": "Boeuf",
+    "BŒUF MAIGRE": "Boeuf",
+    "beef": "Boeuf",
+
+    // Poisson Maigre - variantes
+    "poisson maigre": "Poisson Maigre",
+    "POISSON MAIGRE": "Poisson Maigre",
     "Poisson Maigre": "Poisson Maigre",
+    "poisson": "Poisson Maigre",
+    "POISSON": "Poisson Maigre",
+    "Poisson": "Poisson Maigre",
+    "fish": "Poisson Maigre",
+    "lean fish": "Poisson Maigre",
+
+    // Poisson Gras - variantes
+    "poisson gras": "Poisson Gras",
+    "POISSON GRAS": "Poisson Gras",
     "Poisson Gras": "Poisson Gras",
+    "fatty fish": "Poisson Gras",
+    "saumon": "Poisson Gras",
+    "salmon": "Poisson Gras",
+
+    // Végétarien - variantes
+    "végétarien": "Végétarien",
+    "vegetarien": "Végétarien",
+    "VÉGÉTARIEN": "Végétarien",
+    "VEGETARIEN": "Végétarien",
+    "Végétarien": "Végétarien",
+    "Vegetarien": "Végétarien",
+    "veggie": "Végétarien",
+    "vegetarian": "Végétarien",
+    "vege": "Végétarien",
+    "veg": "Végétarien",
   };
 
-  return mapping[value] || "Poulet";
+  // Chercher dans le mapping
+  const result = mapping[normalized];
+
+  if (result) {
+    return result;
+  }
+
+  // Si aucune correspondance exacte, essayer de détecter par mot-clé
+  if (normalized.includes("poulet") || normalized.includes("chicken")) {
+    warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Poulet'`);
+    return "Poulet";
+  }
+  if (normalized.includes("dinde") || normalized.includes("turkey")) {
+    warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Dinde'`);
+    return "Dinde";
+  }
+  if (normalized.includes("boeuf") || normalized.includes("bœuf") || normalized.includes("beef")) {
+    warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Boeuf'`);
+    return "Boeuf";
+  }
+  if (normalized.includes("poisson") || normalized.includes("fish")) {
+    if (normalized.includes("gras") || normalized.includes("fatty") || normalized.includes("saumon")) {
+      warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Poisson Gras'`);
+      return "Poisson Gras";
+    }
+    warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Poisson Maigre'`);
+    return "Poisson Maigre";
+  }
+  if (normalized.includes("veg") || normalized.includes("végé")) {
+    warnings.push(`⚠️ Type protéine "${value}" non reconnu exactement, détecté comme 'Végétarien'`);
+    return "Végétarien";
+  }
+
+  // Aucune correspondance trouvée
+  warnings.push(`❌ Type protéine "${value}" non reconnu, utilisation de 'Poulet' par défaut`);
+  return "Poulet";
 }
 
 function parseFrequence(type_proteine: TypeProteine): FrequenceMenu {
