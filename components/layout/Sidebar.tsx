@@ -13,12 +13,14 @@ import {
   LineChart,
   User,
   Clock,
+  Wand2,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/aliments", label: "Aliments", icon: Carrot },
   { href: "/menus", label: "Menus", icon: UtensilsCrossed },
+  { href: "/menus/generer", label: "Générer des menus", icon: Wand2 },
   { href: "/courses", label: "Courses", icon: ShoppingCart },
   { href: "/sport", label: "Sport", icon: Dumbbell },
   { href: "/journal", label: "Journal", icon: Calendar },
