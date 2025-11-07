@@ -425,7 +425,7 @@ export function calculerValeursProfile(
  */
 export function genererConfigRepas(
   nombre_repas: number,
-  preset: "EQUILIBRE" | "MATIN_PLUS" | "MATIN_TRES_PLUS" | "SOIR_PLUS" | "SOIR_TRES_PLUS"
+  preset: "EQUILIBRE" | "MIDI_PLUS" | "MIDI_TRES_PLUS" | "SOIR_PLUS" | "SOIR_TRES_PLUS"
 ): { nom: string; horaire: string; pourcentage_calories: number; actif: boolean }[] {
   const repas_base = [
     { nom: "Petit-déjeuner", horaire: "08:00" },
@@ -443,8 +443,8 @@ export function genererConfigRepas(
   } else if (nombre_repas === 2) {
     // Déjeuner + Dîner
     const ratio = preset === "EQUILIBRE" ? [50, 50] :
-                  preset === "MATIN_PLUS" ? [60, 40] :
-                  preset === "MATIN_TRES_PLUS" ? [70, 30] :
+                  preset === "MIDI_PLUS" ? [60, 40] :
+                  preset === "MIDI_TRES_PLUS" ? [70, 30] :
                   preset === "SOIR_PLUS" ? [40, 60] :
                   [30, 70]; // SOIR_TRES_PLUS
 
@@ -455,8 +455,8 @@ export function genererConfigRepas(
   } else if (nombre_repas === 3) {
     // Petit-déj + Déjeuner + Dîner
     const ratio = preset === "EQUILIBRE" ? [30, 35, 35] :
-                  preset === "MATIN_PLUS" ? [35, 35, 30] :
-                  preset === "MATIN_TRES_PLUS" ? [40, 35, 25] :
+                  preset === "MIDI_PLUS" ? [35, 35, 30] :
+                  preset === "MIDI_TRES_PLUS" ? [40, 35, 25] :
                   preset === "SOIR_PLUS" ? [25, 35, 40] :
                   [20, 30, 50]; // SOIR_TRES_PLUS
 
@@ -468,8 +468,8 @@ export function genererConfigRepas(
   } else if (nombre_repas === 4) {
     // Petit-déj + Collation matin + Déjeuner + Dîner
     const ratio = preset === "EQUILIBRE" ? [25, 10, 30, 35] :
-                  preset === "MATIN_PLUS" ? [30, 15, 30, 25] :
-                  preset === "MATIN_TRES_PLUS" ? [35, 15, 30, 20] :
+                  preset === "MIDI_PLUS" ? [30, 15, 30, 25] :
+                  preset === "MIDI_TRES_PLUS" ? [35, 15, 30, 20] :
                   preset === "SOIR_PLUS" ? [20, 10, 30, 40] :
                   [15, 10, 25, 50]; // SOIR_TRES_PLUS
 
@@ -482,8 +482,8 @@ export function genererConfigRepas(
   } else {
     // 5 repas - tous actifs
     const ratio = preset === "EQUILIBRE" ? [20, 10, 30, 10, 30] :
-                  preset === "MATIN_PLUS" ? [25, 15, 30, 10, 20] :
-                  preset === "MATIN_TRES_PLUS" ? [30, 15, 30, 10, 15] :
+                  preset === "MIDI_PLUS" ? [25, 15, 30, 10, 20] :
+                  preset === "MIDI_TRES_PLUS" ? [30, 15, 30, 10, 15] :
                   preset === "SOIR_PLUS" ? [15, 10, 25, 10, 40] :
                   [15, 10, 20, 10, 45]; // SOIR_TRES_PLUS
 

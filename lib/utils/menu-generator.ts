@@ -309,7 +309,7 @@ async function genererMenuJour(
   }
 
   // Déterminer le ratio de répartition selon le preset
-  let ratioRepas1 = 0.6; // Par défaut MATIN_PLUS (60/40)
+  let ratioRepas1 = 0.6; // Par défaut MIDI_PLUS (60/40)
   let ratioRepas2 = 0.4;
 
   switch (profile.preset_repartition) {
@@ -317,19 +317,19 @@ async function genererMenuJour(
       ratioRepas1 = 0.5;
       ratioRepas2 = 0.5;
       break;
-    case "MATIN_PLUS":
+    case "MIDI_PLUS": // 60% au midi (Repas 1 à 11h)
       ratioRepas1 = 0.6;
       ratioRepas2 = 0.4;
       break;
-    case "MATIN_TRES_PLUS":
+    case "MIDI_TRES_PLUS": // 70% au midi (Repas 1 à 11h)
       ratioRepas1 = 0.7;
       ratioRepas2 = 0.3;
       break;
-    case "SOIR_PLUS": // "Midi+" selon l'utilisateur (Repas 2 = 17h)
+    case "SOIR_PLUS": // 60% au soir (Repas 2 à 17h)
       ratioRepas1 = 0.4;
       ratioRepas2 = 0.6;
       break;
-    case "SOIR_TRES_PLUS": // "Midi++" selon l'utilisateur
+    case "SOIR_TRES_PLUS": // 70% au soir (Repas 2 à 17h)
       ratioRepas1 = 0.3;
       ratioRepas2 = 0.7;
       break;

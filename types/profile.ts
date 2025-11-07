@@ -86,8 +86,8 @@ export interface MesureTG {
  */
 export type PresetRepartition =
   | "EQUILIBRE" // 50/50
-  | "MATIN_PLUS" // 60/40
-  | "MATIN_TRES_PLUS" // 70/30
+  | "MIDI_PLUS" // 60/40
+  | "MIDI_TRES_PLUS" // 70/30
   | "SOIR_PLUS" // 40/60
   | "SOIR_TRES_PLUS" // 30/70
   | "CUSTOM"; // Personnalisé
@@ -202,23 +202,23 @@ export const PRESETS_REPARTITION: Record<
 > = {
   EQUILIBRE: {
     label: "Équilibré (50/50)",
-    description: "Répartition égale entre matin et soir",
+    description: "Répartition égale entre midi et soir",
   },
-  MATIN_PLUS: {
-    label: "Matin+ (60/40)",
-    description: "Plus de calories le matin (Repas 1 à 11h)",
+  MIDI_PLUS: {
+    label: "Midi + (60/40)",
+    description: "Plus de calories au midi (Repas 1 à 11h)",
   },
-  MATIN_TRES_PLUS: {
-    label: "Matin++ (70/30)",
-    description: "Beaucoup plus de calories le matin (Repas 1 à 11h)",
+  MIDI_TRES_PLUS: {
+    label: "Midi ++ (70/30)",
+    description: "Beaucoup plus de calories au midi (Repas 1 à 11h)",
   },
   SOIR_PLUS: {
-    label: "Midi+ (40/60)",
-    description: "Plus de calories le midi (Repas 2 à 17h)",
+    label: "Soir + (40/60)",
+    description: "Plus de calories le soir (Repas 2 à 17h)",
   },
   SOIR_TRES_PLUS: {
-    label: "Midi++ (30/70)",
-    description: "Beaucoup plus de calories le midi (Repas 2 à 17h)",
+    label: "Soir ++ (30/70)",
+    description: "Beaucoup plus de calories le soir (Repas 2 à 17h)",
   },
   CUSTOM: {
     label: "Personnalisé",
