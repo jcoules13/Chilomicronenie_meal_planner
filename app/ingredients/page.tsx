@@ -7,8 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IngredientCard } from "@/components/ingredients/IngredientCard";
 import { IngredientFilters } from "@/components/ingredients/IngredientFilters";
+import { AddIngredientModal } from "@/components/ingredients/AddIngredientModal";
 import { useIngredients } from "@/hooks/useIngredients";
-import { Upload, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Upload, Search, RefreshCw, Trash2, Plus, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function IngredientsPage() {
   const {
@@ -25,6 +34,7 @@ export default function IngredientsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [importStatus, setImportStatus] = useState<{
     message: string;
     type: "info" | "success" | "error";
@@ -156,11 +166,18 @@ export default function IngredientsPage() {
                       isImporting ? "animate-spin" : ""
                     }`}
                   />
-                  Importer données exemple
+                  Importer 300 aliments
                 </Button>
               )}
               {hasData && (
                 <>
+                  <Button
+                    onClick={() => setShowAddModal(true)}
+                    variant="default"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter un aliment
+                  </Button>
                   <Button
                     onClick={loadAllIngredients}
                     disabled={isLoading}
@@ -173,14 +190,25 @@ export default function IngredientsPage() {
                     />
                     Actualiser
                   </Button>
-                  <Button
-                    onClick={handleClear}
-                    disabled={isImporting}
-                    variant="destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Vider la base
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Maintenance</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleClear}
+                        className="text-destructive focus:text-destructive"
+                        disabled={isImporting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Vider la base
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
             </div>
@@ -225,6 +253,20 @@ export default function IngredientsPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Ajout d'aliment */}
+      <AddIngredientModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onIngredientAdded={() => {
+          loadAllIngredients();
+          setImportStatus({
+            message: "✅ Ingrédient ajouté avec succès",
+            type: "success",
+          });
+          setTimeout(() => setImportStatus(null), 3000);
+        }}
+      />
     </MainLayout>
   );
 }
