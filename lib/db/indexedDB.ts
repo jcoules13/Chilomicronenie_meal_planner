@@ -1,5 +1,5 @@
 const DB_NAME = "nutrition_app";
-const DB_VERSION = 3; // v3: Ajout plannings_hebdomadaires
+const DB_VERSION = 4; // v4: Pivot CIQUAL - Nouveaux stores ingredients_ciqual, recettes, menus_personnalises, contraintes_utilisateur
 
 export interface DBStore {
   name: string;
@@ -72,6 +72,41 @@ export const STORES: DBStore[] = [
       { name: "date_debut_semaine", keyPath: "date_debut_semaine", unique: false },
       { name: "date_creation", keyPath: "date_creation", unique: false },
       { name: "est_archive", keyPath: "est_archive", unique: false },
+    ],
+  },
+  // === v4: Nouveaux stores CIQUAL ===
+  {
+    name: "ingredients_ciqual",
+    keyPath: "id",
+    indexes: [
+      { name: "code_ciqual", keyPath: "code_ciqual", unique: true },
+      { name: "nom_fr", keyPath: "nom_fr", unique: false },
+      { name: "groupe", keyPath: "groupe", unique: false },
+      { name: "compatible_chylo", keyPath: "compatible_chylo", unique: false },
+    ],
+  },
+  {
+    name: "recettes",
+    keyPath: "id",
+    indexes: [
+      { name: "nom", keyPath: "nom", unique: false },
+      { name: "type", keyPath: "type", unique: false },
+      { name: "categorie_proteine", keyPath: "categorie_proteine", unique: false },
+    ],
+  },
+  {
+    name: "menus_personnalises",
+    keyPath: "id",
+    indexes: [
+      { name: "utilisateur_id", keyPath: "utilisateur_id", unique: false },
+      { name: "date_creation", keyPath: "date_creation", unique: false },
+    ],
+  },
+  {
+    name: "contraintes_utilisateur",
+    keyPath: "id",
+    indexes: [
+      { name: "utilisateur_id", keyPath: "utilisateur_id", unique: true },
     ],
   },
 ];
