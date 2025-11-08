@@ -9,7 +9,10 @@ import type { IngredientCiqual } from '@/types/ciqual';
 import { initDB } from './indexedDB';
 import { v4 as uuidv4 } from 'uuid';
 
-const CIQUAL_FILE_PATH = path.join(process.cwd(), 'table_ciqual', 'Table_Ciqual_2020.xls');
+// Essayer d'abord .xlsx (format moderne), sinon .xls (ancien format)
+const CIQUAL_FILE_PATH_XLSX = path.join(process.cwd(), 'table_ciqual', 'Table_Ciqual_2020.xlsx');
+const CIQUAL_FILE_PATH_XLS = path.join(process.cwd(), 'table_ciqual', 'Table_Ciqual_2020.xls');
+const CIQUAL_FILE_PATH = fs.existsSync(CIQUAL_FILE_PATH_XLSX) ? CIQUAL_FILE_PATH_XLSX : CIQUAL_FILE_PATH_XLS;
 
 interface CiqualRow {
   alim_grp_code: string;
