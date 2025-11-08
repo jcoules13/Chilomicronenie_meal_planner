@@ -160,8 +160,9 @@ export async function searchCiqualByName(query: string, limit: number = 20): Pro
 
     console.log('Tentative de lecture du fichier:', CIQUAL_FILE_PATH);
 
-    // Lire le fichier Excel
-    const workbook = XLSX.readFile(CIQUAL_FILE_PATH);
+    // Lire le fichier Excel avec fs.readFileSync pour éviter les problèmes de permissions Windows
+    const fileBuffer = fs.readFileSync(CIQUAL_FILE_PATH);
+    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
     const worksheet = workbook.Sheets['compo'];
     const rawData = XLSX.utils.sheet_to_json(worksheet) as CiqualRow[];
 
