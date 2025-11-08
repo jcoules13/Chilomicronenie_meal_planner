@@ -151,8 +151,11 @@ export async function searchCiqualByName(query: string, limit: number = 20): Pro
     }
 
     if (!fs.existsSync(CIQUAL_FILE_PATH)) {
-      return { success: false, results: [], error: 'Fichier CIQUAL introuvable' };
+      console.error('Fichier non trouvé:', CIQUAL_FILE_PATH);
+      return { success: false, results: [], error: `Fichier CIQUAL introuvable: ${CIQUAL_FILE_PATH}` };
     }
+
+    console.log('Tentative de lecture du fichier:', CIQUAL_FILE_PATH);
 
     // Lire le fichier Excel
     const workbook = XLSX.readFile(CIQUAL_FILE_PATH);
@@ -178,7 +181,8 @@ export async function searchCiqualByName(query: string, limit: number = 20): Pro
     return { success: true, results };
   } catch (error) {
     console.error('Erreur recherche CIQUAL:', error);
-    return { success: false, results: [], error: String(error) };
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, results: [], error: `Erreur: ${errorMessage}` };
   }
 }
 
