@@ -194,32 +194,32 @@ export function getCompatibiliteLabel(
       return {
         label: "EXCELLENT",
         emoji: "🟢",
-        bgClass: "bg-green-100 dark:bg-green-900",
-        textClass: "text-green-800 dark:text-green-100",
+        bgClass: "bg-green-600 dark:bg-green-700",
+        textClass: "text-white",
         icon: "✅",
       };
     case "BON":
       return {
         label: "BON",
         emoji: "🔵",
-        bgClass: "bg-blue-100 dark:bg-blue-900",
-        textClass: "text-blue-800 dark:text-blue-100",
+        bgClass: "bg-blue-600 dark:bg-blue-700",
+        textClass: "text-white",
         icon: "👍",
       };
     case "MODERE":
       return {
         label: "MODÉRÉ",
         emoji: "🟡",
-        bgClass: "bg-yellow-100 dark:bg-yellow-900",
-        textClass: "text-yellow-800 dark:text-yellow-100",
+        bgClass: "bg-yellow-600 dark:bg-yellow-700",
+        textClass: "text-white",
         icon: "⚠️",
       };
     case "DECONSEILLE":
       return {
         label: "DÉCONSEILLÉ",
         emoji: "🔴",
-        bgClass: "bg-red-100 dark:bg-red-900",
-        textClass: "text-red-800 dark:text-red-100",
+        bgClass: "bg-red-600 dark:bg-red-700",
+        textClass: "text-white",
         icon: "❌",
       };
   }
