@@ -8,6 +8,7 @@ import {
   getIngredientsByGroupe,
   countCiqualIngredients,
   importSampleCiqualData,
+  clearAllCiqualIngredients,
 } from "@/lib/db/ciqual-import";
 import { initDB } from "@/lib/db/indexedDB";
 
@@ -144,6 +145,24 @@ export function useIngredients() {
     }
   };
 
+  const clearDatabase = async () => {
+    setIsLoading(true);
+    try {
+      const result = await clearAllCiqualIngredients();
+      if (result.success) {
+        setAllIngredients([]);
+        setIngredients([]);
+        setHasData(false);
+        return { success: true, deleted: result.deleted };
+      }
+      return { success: false, error: result.error };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     allIngredients,
     ingredients,
@@ -153,6 +172,7 @@ export function useIngredients() {
     setFilters,
     loadAllIngredients,
     importSampleData,
+    clearDatabase,
   };
 }
 

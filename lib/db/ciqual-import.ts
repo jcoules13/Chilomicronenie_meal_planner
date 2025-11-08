@@ -505,6 +505,40 @@ export async function countCiqualIngredients(): Promise<number> {
 }
 
 /**
+ * Supprime tous les ingrédients CIQUAL de la base de données
+ */
+export async function clearAllCiqualIngredients(): Promise<{
+  success: boolean;
+  deleted: number;
+  error?: string;
+}> {
+  try {
+    const db = await initDB();
+
+    // Compter d'abord
+    const count = await countCiqualIngredients();
+
+    // Supprimer tous les ingrédients
+    const transaction = db.transaction("ingredients_ciqual", "readwrite");
+    const store = transaction.objectStore("ingredients_ciqual");
+
+    return new Promise((resolve) => {
+      const request = store.clear();
+      request.onsuccess = () =>
+        resolve({ success: true, deleted: count });
+      request.onerror = () =>
+        resolve({
+          success: false,
+          deleted: 0,
+          error: request.error?.message,
+        });
+    });
+  } catch (error) {
+    return { success: false, deleted: 0, error: String(error) };
+  }
+}
+
+/**
  * Parse un fichier CSV CIQUAL et l'importe
  * TODO: Implémenter le parsing CSV complet
  */

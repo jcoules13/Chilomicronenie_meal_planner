@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IngredientCard } from "@/components/ingredients/IngredientCard";
 import { IngredientFilters } from "@/components/ingredients/IngredientFilters";
 import { useIngredients } from "@/hooks/useIngredients";
-import { Upload, Search, RefreshCw } from "lucide-react";
+import { Upload, Search, RefreshCw, Trash2 } from "lucide-react";
 
 export default function IngredientsPage() {
   const {
@@ -20,6 +20,7 @@ export default function IngredientsPage() {
     setFilters,
     loadAllIngredients,
     importSampleData,
+    clearDatabase,
   } = useIngredients();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +54,42 @@ export default function IngredientsPage() {
       } else {
         setImportStatus({
           message: `❌ Erreurs lors de l'import`,
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setImportStatus({
+        message: `❌ Erreur: ${error}`,
+        type: "error",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleClear = async () => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer tous les ingrédients CIQUAL ?")) {
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStatus({
+      message: "Suppression en cours...",
+      type: "info",
+    });
+
+    try {
+      const result = await clearDatabase();
+
+      if (result.success) {
+        setImportStatus({
+          message: `✅ Base vidée: ${result.deleted} ingrédients supprimés`,
+          type: "success",
+        });
+        setTimeout(() => setImportStatus(null), 3000);
+      } else {
+        setImportStatus({
+          message: `❌ Erreur lors de la suppression`,
           type: "error",
         });
       }
@@ -123,18 +160,28 @@ export default function IngredientsPage() {
                 </Button>
               )}
               {hasData && (
-                <Button
-                  onClick={loadAllIngredients}
-                  disabled={isLoading}
-                  variant="outline"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 mr-2 ${
-                      isLoading ? "animate-spin" : ""
-                    }`}
-                  />
-                  Actualiser
-                </Button>
+                <>
+                  <Button
+                    onClick={loadAllIngredients}
+                    disabled={isLoading}
+                    variant="outline"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${
+                        isLoading ? "animate-spin" : ""
+                      }`}
+                    />
+                    Actualiser
+                  </Button>
+                  <Button
+                    onClick={handleClear}
+                    disabled={isImporting}
+                    variant="destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Vider la base
+                  </Button>
+                </>
               )}
             </div>
           </div>
