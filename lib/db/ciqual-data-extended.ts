@@ -856,7 +856,7 @@ export const CIQUAL_EXTENDED_DATA: Omit<IngredientCiqual, "id" | "date_import">[
     source: "CIQUAL",
   },
   {
-    code_ciqual: "20005",
+    code_ciqual: "20105",
     nom_fr: "Brocoli, cuit vapeur",
     nom_en: "Broccoli, steamed",
     groupe: "Légumes",
@@ -879,7 +879,7 @@ export const CIQUAL_EXTENDED_DATA: Omit<IngredientCiqual, "id" | "date_import">[
     source: "CIQUAL",
   },
   {
-    code_ciqual: "20010",
+    code_ciqual: "21010",
     nom_fr: "Carotte, cuite",
     nom_en: "Carrot, cooked",
     groupe: "Légumes",
@@ -902,7 +902,7 @@ export const CIQUAL_EXTENDED_DATA: Omit<IngredientCiqual, "id" | "date_import">[
     source: "CIQUAL",
   },
   {
-    code_ciqual: "20020",
+    code_ciqual: "21020",
     nom_fr: "Haricots verts, cuits",
     nom_en: "Green beans, cooked",
     groupe: "Légumes",
@@ -947,7 +947,7 @@ export const CIQUAL_EXTENDED_DATA: Omit<IngredientCiqual, "id" | "date_import">[
     source: "CIQUAL",
   },
   {
-    code_ciqual: "20030",
+    code_ciqual: "21030",
     nom_fr: "Chou-fleur, cuit",
     nom_en: "Cauliflower, cooked",
     groupe: "Légumes",
@@ -970,7 +970,7 @@ export const CIQUAL_EXTENDED_DATA: Omit<IngredientCiqual, "id" | "date_import">[
     source: "CIQUAL",
   },
   {
-    code_ciqual: "20040",
+    code_ciqual: "21040",
     nom_fr: "Poivron, cru",
     nom_en: "Bell pepper, raw",
     groupe: "Légumes",

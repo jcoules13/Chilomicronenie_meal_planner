@@ -214,32 +214,32 @@ export function getCompatibiliteLabel(
       return {
         label: "EXCELLENT",
         emoji: "🟢",
-        bgClass: "bg-green-600 dark:bg-green-700",
-        textClass: "text-white",
+        bgClass: "bg-green-100",
+        textClass: "text-green-700",
         icon: "✅",
       };
     case "BON":
       return {
         label: "BON",
         emoji: "🔵",
-        bgClass: "bg-blue-600 dark:bg-blue-700",
-        textClass: "text-white",
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
         icon: "👍",
       };
     case "MODERE":
       return {
         label: "MODÉRÉ",
         emoji: "🟡",
-        bgClass: "bg-yellow-600 dark:bg-yellow-700",
-        textClass: "text-white",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-700",
         icon: "⚠️",
       };
     case "DECONSEILLE":
       return {
         label: "DÉCONSEILLÉ",
         emoji: "🔴",
-        bgClass: "bg-red-600 dark:bg-red-700",
-        textClass: "text-white",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
         icon: "❌",
       };
   }
