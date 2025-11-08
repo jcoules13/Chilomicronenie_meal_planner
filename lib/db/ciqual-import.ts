@@ -6,6 +6,7 @@
 import { initDB } from "./indexedDB";
 import type { IngredientCiqual, Nutrition100g, Saison } from "@/types/ciqual";
 import { v4 as uuidv4 } from "uuid";
+import { CIQUAL_EXTENDED_DATA } from "./ciqual-data-extended";
 
 // ============================================================================
 // SAMPLE DATA - Ingrédients CIQUAL de base pour démarrage
@@ -265,7 +266,7 @@ const SAMPLE_CIQUAL_DATA: Omit<IngredientCiqual, "id" | "date_import">[] = [
 // ============================================================================
 
 /**
- * Importe les données CIQUAL d'exemple dans IndexedDB
+ * Importe les données CIQUAL étendues dans IndexedDB (~93 ingrédients)
  */
 export async function importSampleCiqualData(): Promise<{
   success: boolean;
@@ -278,7 +279,7 @@ export async function importSampleCiqualData(): Promise<{
   try {
     const db = await initDB();
 
-    for (const data of SAMPLE_CIQUAL_DATA) {
+    for (const data of CIQUAL_EXTENDED_DATA) {
       try {
         const ingredient: IngredientCiqual = {
           ...data,

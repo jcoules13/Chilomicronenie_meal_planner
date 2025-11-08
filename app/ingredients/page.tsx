@@ -152,7 +152,7 @@ export default function IngredientsPage() {
                     Aucun ingrédient dans la base CIQUAL
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Importez les données d'exemple (8 ingrédients) pour
+                    Importez les données d'exemple (~93 ingrédients) pour
                     commencer
                   </p>
                   <Button onClick={handleImport} disabled={isImporting}>
