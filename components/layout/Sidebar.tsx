@@ -15,11 +15,13 @@ import {
   User,
   Clock,
   Wand2,
+  ChefHat,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/aliments", label: "Aliments", icon: Carrot },
+  { href: "/recettes", label: "Recettes", icon: ChefHat },
   { href: "/menus", label: "Menus", icon: UtensilsCrossed },
   { href: "/menus/generer", label: "Gestion des Menus", icon: Wand2 },
   { href: "/planning-hebdomadaire", label: "Planning Hebdomadaire", icon: CalendarCheck },
