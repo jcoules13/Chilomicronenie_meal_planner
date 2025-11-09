@@ -8,6 +8,7 @@ import {
   RecipeFilters,
   RecipeGenerationOptions,
   RecipeSearchResult,
+  ResultatAdaptation,
   getRandomRecipe,
   validerRecette,
 } from "@/types/recipe";
@@ -173,6 +174,93 @@ export function adapteRecipeToBMR(
   };
 
   return adapted;
+}
+
+/**
+ * Adapter une recette selon le budget lipides disponible
+ *
+ * @param recipe - La recette à adapter
+ * @param budget_lipides_repas_g - Budget lipides disponible pour ce repas (en grammes)
+ * @returns Résultat de l'adaptation avec la recette adaptée ou raison d'incompatibilité
+ */
+export function adapterRecetteAuBudget(
+  recipe: Recipe,
+  budget_lipides_repas_g: number
+): ResultatAdaptation {
+  // Vérifier si la recette a des adaptations configurées
+  if (!recipe.adaptations_budget) {
+    // Pas d'adaptation configurée - vérifier si compatible directement
+    if (recipe.nutrition.lipides_g <= budget_lipides_repas_g) {
+      return {
+        compatible: true,
+        recette_adaptee: recipe,
+      };
+    } else {
+      return {
+        compatible: false,
+        raison_incompatibilite: `Recette sans adaptations: ${recipe.nutrition.lipides_g}g de lipides dépassent le budget de ${budget_lipides_repas_g}g`,
+      };
+    }
+  }
+
+  // Vérifier si les lipides incompressibles dépassent le budget
+  if (recipe.lipides_incompressibles_g > budget_lipides_repas_g) {
+    return {
+      compatible: false,
+      raison_incompatibilite: `Lipides naturels incompressibles (${recipe.lipides_incompressibles_g}g) dépassent le budget disponible (${budget_lipides_repas_g}g). Cette recette nécessite un budget lipides plus élevé.`,
+    };
+  }
+
+  // Sélectionner le niveau d'adaptation approprié
+  let niveau: "strict" | "modere" | "souple";
+  let adaptation;
+
+  if (budget_lipides_repas_g <= recipe.adaptations_budget.strict.budget_max_g) {
+    niveau = "strict";
+    adaptation = recipe.adaptations_budget.strict;
+  } else if (budget_lipides_repas_g <= recipe.adaptations_budget.modere.budget_max_g) {
+    niveau = "modere";
+    adaptation = recipe.adaptations_budget.modere;
+  } else {
+    niveau = "souple";
+    adaptation = recipe.adaptations_budget.souple;
+  }
+
+  // Vérifier que l'adaptation choisie respecte le budget
+  if (adaptation.lipides_totaux_g > budget_lipides_repas_g) {
+    return {
+      compatible: false,
+      raison_incompatibilite: `Même avec l'adaptation ${niveau} (${adaptation.lipides_totaux_g}g), la recette dépasse le budget de ${budget_lipides_repas_g}g`,
+    };
+  }
+
+  // Créer la recette adaptée
+  const recette_adaptee: Recipe = {
+    ...recipe,
+    nutrition: {
+      ...recipe.nutrition,
+      lipides_g: adaptation.lipides_totaux_g,
+      lipides_detail: adaptation.lipides_detail,
+    },
+  };
+
+  // Créer un badge d'adaptation pour l'affichage
+  let badge_adaptation = "";
+  if (niveau === "strict") {
+    badge_adaptation = "🔴 Adaptation stricte - Budget limité";
+  } else if (niveau === "modere") {
+    badge_adaptation = "🟡 Adaptation modérée";
+  } else {
+    badge_adaptation = "🟢 Recette complète";
+  }
+
+  return {
+    compatible: true,
+    niveau_applique: niveau,
+    recette_adaptee,
+    modifications_appliquees: adaptation.modifications,
+    badge_adaptation,
+  };
 }
 
 /**

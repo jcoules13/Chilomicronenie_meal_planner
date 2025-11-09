@@ -112,6 +112,57 @@ export interface StockageRecette {
 }
 
 /**
+ * Type d'action pour adaptation
+ */
+export type ActionAdaptation = "RETIRER" | "REDUIRE" | "CONSERVER" | "MODIFIER";
+
+/**
+ * Modification d'ingrédient ou méthode
+ */
+export interface ModificationAdaptation {
+  action: ActionAdaptation;
+  ingredient?: string;
+  de?: string | number;
+  vers?: string | number;
+  economie_g?: number;
+  description: string;
+}
+
+/**
+ * Niveau d'adaptation selon budget lipides
+ */
+export interface NiveauAdaptation {
+  nom: string;  // "strict", "modere", "souple"
+  budget_min_g: number;  // Budget minimum pour ce niveau
+  budget_max_g: number;  // Budget maximum pour ce niveau
+  lipides_totaux_g: number;  // Lipides totaux après adaptation
+  lipides_detail: LipidesDetail;  // Détail des lipides adaptés
+  modifications: ModificationAdaptation[];
+  instructions_speciales?: string[];  // Instructions de préparation modifiées
+}
+
+/**
+ * Configuration d'adaptations d'une recette
+ */
+export interface AdaptationsBudget {
+  strict: NiveauAdaptation;    // Pour TG critique (10g/jour → 5g/repas)
+  modere: NiveauAdaptation;    // Pour TG modéré (15-18g/jour → 7-9g/repas)
+  souple: NiveauAdaptation;    // Pour TG normal (20g/jour → 10g/repas)
+}
+
+/**
+ * Résultat d'adaptation d'une recette
+ */
+export interface ResultatAdaptation {
+  compatible: boolean;
+  niveau_applique?: "strict" | "modere" | "souple";
+  recette_adaptee?: Recipe;
+  modifications_appliquees?: ModificationAdaptation[];
+  badge_adaptation?: string;
+  raison_incompatibilite?: string;
+}
+
+/**
  * Recette complète
  */
 export interface Recipe {
@@ -133,6 +184,10 @@ export interface Recipe {
 
   // Nutrition
   nutrition: NutritionRecette;
+
+  // Système d'adaptation aux budgets lipides
+  lipides_incompressibles_g: number;  // Lipides naturels minimum (viande, etc.)
+  adaptations_budget?: AdaptationsBudget;  // Adaptations selon budget lipides
 
   // Informations complémentaires
   conseils?: string[];

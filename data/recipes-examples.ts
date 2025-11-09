@@ -166,6 +166,114 @@ export const EXAMPLE_RECIPES: Recipe[] = [
       ig_moyen: 32,
     },
 
+    // Système d'adaptation aux budgets lipides
+    lipides_incompressibles_g: 3, // Lipides naturels du poulet
+
+    adaptations_budget: {
+      strict: {
+        nom: "strict",
+        budget_min_g: 0,
+        budget_max_g: 6,
+        lipides_totaux_g: 3,
+        lipides_detail: {
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "RETIRER",
+            ingredient: "Huile MCT coco",
+            de: "5g",
+            vers: "0g",
+            economie_g: 5,
+            description: "Retirer l'huile MCT coco des lentilles - assaisonner uniquement avec épices et herbes",
+          },
+          {
+            action: "RETIRER",
+            ingredient: "Huile d'olive",
+            de: "5g",
+            vers: "0g",
+            economie_g: 5,
+            description: "Retirer l'huile d'olive de la salade - utiliser citron et vinaigre balsamique",
+          },
+        ],
+        instructions_speciales: [
+          "Assaisonner les lentilles uniquement avec sel, poivre, ail en poudre et herbes de Provence",
+          "Assaisonner la salade avec du jus de citron, vinaigre balsamique, moutarde, sel et poivre",
+        ],
+      },
+      modere: {
+        nom: "modere",
+        budget_min_g: 7,
+        budget_max_g: 9,
+        lipides_totaux_g: 8,
+        lipides_detail: {
+          mct_coco_g: 2.5,
+          huile_olive_g: 2.5,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "5g",
+            vers: "2.5g",
+            economie_g: 2.5,
+            description: "Réduire l'huile MCT de moitié (1/2 cuillère à café)",
+          },
+          {
+            action: "REDUIRE",
+            ingredient: "Huile d'olive",
+            de: "5g",
+            vers: "2.5g",
+            economie_g: 2.5,
+            description: "Réduire l'huile d'olive de moitié (1/2 cuillère à café)",
+          },
+        ],
+        instructions_speciales: [
+          "Utiliser 1/2 cuillère à café d'huile MCT pour les lentilles",
+          "Utiliser 1/2 cuillère à café d'huile d'olive pour la salade, compléter avec du citron",
+        ],
+      },
+      souple: {
+        nom: "souple",
+        budget_min_g: 10,
+        budget_max_g: 12,
+        lipides_totaux_g: 10,
+        lipides_detail: {
+          mct_coco_g: 3.5,
+          huile_olive_g: 3.5,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "5g",
+            vers: "3.5g",
+            economie_g: 1.5,
+            description: "Légère réduction de l'huile MCT",
+          },
+          {
+            action: "REDUIRE",
+            ingredient: "Huile d'olive",
+            de: "5g",
+            vers: "3.5g",
+            economie_g: 1.5,
+            description: "Légère réduction de l'huile d'olive",
+          },
+        ],
+        instructions_speciales: [],
+      },
+    },
+
     conseils: [
       "Vérifier la cuisson du poulet avec un thermomètre : 75°C à cœur",
       "Les lentilles peuvent être cuites à l'avance et conservées 3-4 jours au réfrigérateur",
@@ -362,6 +470,119 @@ export const EXAMPLE_RECIPES: Recipe[] = [
       ig_moyen: 38,
     },
 
+    // Système d'adaptation aux budgets lipides
+    lipides_incompressibles_g: 2, // Lipides naturels de la dinde
+
+    adaptations_budget: {
+      strict: {
+        nom: "strict",
+        budget_min_g: 0,
+        budget_max_g: 6,
+        lipides_totaux_g: 2,
+        lipides_detail: {
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 2,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "RETIRER",
+            ingredient: "Huile MCT coco",
+            de: "6g",
+            vers: "0g",
+            economie_g: 6,
+            description: "Retirer l'huile MCT - cuire la dinde dans une poêle antiadhésive sans matière grasse",
+          },
+          {
+            action: "RETIRER",
+            ingredient: "Huile d'olive",
+            de: "4g",
+            vers: "0g",
+            economie_g: 4,
+            description: "Retirer l'huile d'olive - assaisonner les tomates cerises avec citron et herbes",
+          },
+          {
+            action: "MODIFIER",
+            description: "Utiliser une poêle antiadhésive bien chaude pour griller la dinde sans matière grasse",
+          },
+        ],
+        instructions_speciales: [
+          "Chauffer la poêle antiadhésive à feu moyen-vif avant d'ajouter la dinde",
+          "Cuire la dinde 4-5 min de chaque côté dans la poêle sèche",
+          "Assaisonner les tomates cerises avec du jus de citron, vinaigre balsamique et herbes fraîches",
+        ],
+      },
+      modere: {
+        nom: "modere",
+        budget_min_g: 7,
+        budget_max_g: 9,
+        lipides_totaux_g: 7,
+        lipides_detail: {
+          mct_coco_g: 3,
+          huile_olive_g: 2,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 2,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "6g",
+            vers: "3g",
+            economie_g: 3,
+            description: "Réduire l'huile MCT de moitié (1/2 cuillère à café)",
+          },
+          {
+            action: "REDUIRE",
+            ingredient: "Huile d'olive",
+            de: "4g",
+            vers: "2g",
+            economie_g: 2,
+            description: "Réduire l'huile d'olive de moitié",
+          },
+        ],
+        instructions_speciales: [
+          "Utiliser 1/2 cuillère à café d'huile MCT pour la cuisson de la dinde",
+          "Utiliser 1/2 cuillère à café d'huile d'olive pour les tomates cerises",
+        ],
+      },
+      souple: {
+        nom: "souple",
+        budget_min_g: 10,
+        budget_max_g: 12,
+        lipides_totaux_g: 10,
+        lipides_detail: {
+          mct_coco_g: 5,
+          huile_olive_g: 3,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 2,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "6g",
+            vers: "5g",
+            economie_g: 1,
+            description: "Légère réduction de l'huile MCT",
+          },
+          {
+            action: "REDUIRE",
+            ingredient: "Huile d'olive",
+            de: "4g",
+            vers: "3g",
+            economie_g: 1,
+            description: "Légère réduction de l'huile d'olive",
+          },
+        ],
+        instructions_speciales: [],
+      },
+    },
+
     conseils: [
       "Ne pas trop cuire la dinde pour éviter qu'elle soit sèche",
       "Le quinoa peut être préparé la veille et réchauffé",
@@ -540,6 +761,82 @@ export const EXAMPLE_RECIPES: Recipe[] = [
         autres_g: 0,
       },
       ig_moyen: 35,
+    },
+
+    // Système d'adaptation aux budgets lipides
+    lipides_incompressibles_g: 3, // Lipides naturels du cabillaud
+
+    adaptations_budget: {
+      strict: {
+        nom: "strict",
+        budget_min_g: 0,
+        budget_max_g: 6,
+        lipides_totaux_g: 3,
+        lipides_detail: {
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "RETIRER",
+            ingredient: "Huile MCT coco",
+            de: "5g",
+            vers: "0g",
+            economie_g: 5,
+            description: "Retirer l'huile MCT - assaisonner les lentilles uniquement avec épices et herbes",
+          },
+        ],
+        instructions_speciales: [
+          "Assaisonner les lentilles avec sel, poivre, cumin, coriandre et persil frais",
+          "Le cabillaud à la vapeur ne nécessite aucune matière grasse",
+        ],
+      },
+      modere: {
+        nom: "modere",
+        budget_min_g: 7,
+        budget_max_g: 9,
+        lipides_totaux_g: 6,
+        lipides_detail: {
+          mct_coco_g: 3,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "5g",
+            vers: "3g",
+            economie_g: 2,
+            description: "Réduire l'huile MCT à 3g (1/2 cuillère à café)",
+          },
+        ],
+        instructions_speciales: [
+          "Utiliser 1/2 cuillère à café d'huile MCT pour les lentilles",
+        ],
+      },
+      souple: {
+        nom: "souple",
+        budget_min_g: 10,
+        budget_max_g: 12,
+        lipides_totaux_g: 8,
+        lipides_detail: {
+          mct_coco_g: 5,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [],
+        instructions_speciales: [
+          "Recette complète sans modification - déjà compatible avec le budget souple",
+        ],
+      },
     },
 
     conseils: [
@@ -738,6 +1035,88 @@ export const EXAMPLE_RECIPES: Recipe[] = [
         autres_g: 0,
       },
       ig_moyen: 30,
+    },
+
+    // Système d'adaptation aux budgets lipides
+    lipides_incompressibles_g: 3, // Lipides naturels du poulet
+
+    adaptations_budget: {
+      strict: {
+        nom: "strict",
+        budget_min_g: 0,
+        budget_max_g: 6,
+        lipides_totaux_g: 3,
+        lipides_detail: {
+          mct_coco_g: 0,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "RETIRER",
+            ingredient: "Huile MCT coco",
+            de: "6g",
+            vers: "0g",
+            economie_g: 6,
+            description: "Retirer l'huile MCT de la marinade - utiliser uniquement les épices",
+          },
+          {
+            action: "MODIFIER",
+            description: "Badigeonner le poulet uniquement avec les épices sèches (ail, paprika, thym) sans matière grasse",
+          },
+        ],
+        instructions_speciales: [
+          "Mélanger les épices sèches (ail en poudre, paprika, thym, sel, poivre) et frotter sur le poulet",
+          "Cuire au four sans matière grasse - les légumes et pois chiches cuisent dans leur propre humidité",
+          "Couvrir le plat d'une feuille d'aluminium les 15 premières minutes pour éviter le dessèchement",
+        ],
+      },
+      modere: {
+        nom: "modere",
+        budget_min_g: 7,
+        budget_max_g: 9,
+        lipides_totaux_g: 6,
+        lipides_detail: {
+          mct_coco_g: 3,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [
+          {
+            action: "REDUIRE",
+            ingredient: "Huile MCT coco",
+            de: "6g",
+            vers: "3g",
+            economie_g: 3,
+            description: "Réduire l'huile MCT de moitié dans la marinade",
+          },
+        ],
+        instructions_speciales: [
+          "Utiliser 1/2 cuillère à café d'huile MCT dans la marinade",
+          "Étaler finement sur le poulet pour une répartition homogène",
+        ],
+      },
+      souple: {
+        nom: "souple",
+        budget_min_g: 10,
+        budget_max_g: 12,
+        lipides_totaux_g: 9,
+        lipides_detail: {
+          mct_coco_g: 6,
+          huile_olive_g: 0,
+          huile_sesame_g: 0,
+          naturels_proteines_g: 3,
+          autres_g: 0,
+        },
+        modifications: [],
+        instructions_speciales: [
+          "Recette complète sans modification - déjà compatible avec le budget souple",
+        ],
+      },
     },
 
     conseils: [
