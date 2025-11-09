@@ -207,10 +207,19 @@ export function AddIngredientModal({ open, onOpenChange, onIngredientAdded }: Ad
                           {compatLabel.icon} {compatLabel.label}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
+                          {ingredient.nutrition_100g.energie_kcal} kcal
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {ingredient.nutrition_100g.proteines_g.toFixed(1)}g protéines
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {ingredient.nutrition_100g.glucides_g.toFixed(1)}g glucides
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
                           {ingredient.nutrition_100g.lipides_g.toFixed(1)}g lipides
                         </Badge>
                         <Badge variant="outline" className="text-xs">
-                          {ingredient.nutrition_100g.energie_kcal} kcal
+                          {ingredient.nutrition_100g.fibres_g.toFixed(1)}g fibres
                         </Badge>
                       </div>
                     </CardHeader>
