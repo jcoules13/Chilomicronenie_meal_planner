@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import type { IngredientCiqual } from "@/types/ciqual";
 import { getCompatibiliteLabel } from "@/hooks/useIngredients";
+import { addIngredientToIndexedDB } from "@/lib/db/ciqual-client";
 
 interface AddIngredientModalProps {
   open: boolean;
@@ -64,16 +65,11 @@ export function AddIngredientModal({ open, onOpenChange, onIngredientAdded }: Ad
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/ciqual/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ingredient),
-      });
+      // Ajouter directement dans IndexedDB (côté client)
+      const result = await addIngredientToIndexedDB(ingredient);
 
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.error || "Erreur lors de l'ajout");
+      if (!result.success) {
+        setError(result.error || "Erreur lors de l'ajout");
         return;
       }
 
@@ -93,7 +89,7 @@ export function AddIngredientModal({ open, onOpenChange, onIngredientAdded }: Ad
         }
       }, 1500);
     } catch (err) {
-      setError("Erreur de connexion au serveur");
+      setError("Erreur lors de l'ajout");
       console.error(err);
     } finally {
       setIsAdding(false);

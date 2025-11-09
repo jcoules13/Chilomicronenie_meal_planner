@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addSingleCiqualIngredient } from "@/lib/db/ciqual-search";
-import type { IngredientCiqual } from "@/types/ciqual";
 
+// Cette route retourne juste les données validées
+// L'ajout dans IndexedDB se fait côté client
 export async function POST(request: NextRequest) {
   try {
-    const ingredient: Omit<IngredientCiqual, "id" | "date_import"> = await request.json();
+    const ingredient = await request.json();
 
     if (!ingredient || !ingredient.code_ciqual || !ingredient.nom_fr) {
       return NextResponse.json(
@@ -13,13 +13,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await addSingleCiqualIngredient(ingredient);
-
-    if (!result.success) {
-      return NextResponse.json(result, { status: 400 });
-    }
-
-    return NextResponse.json(result);
+    // Retourner les données validées pour ajout côté client
+    return NextResponse.json({
+      success: true,
+      ingredient
+    });
   } catch (error) {
     console.error("Erreur API add:", error);
     return NextResponse.json(
