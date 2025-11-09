@@ -4,61 +4,141 @@ import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlimentCard } from "@/components/aliments/AlimentCard";
-import { AlimentFilters } from "@/components/aliments/AlimentFilters";
-import { useAliments } from "@/hooks/useAliments";
-import { Upload, Plus, Search, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { IngredientCard } from "@/components/ingredients/IngredientCard";
+import { IngredientFilters } from "@/components/ingredients/IngredientFilters";
+import { AddIngredientModal } from "@/components/ingredients/AddIngredientModal";
+import { useIngredients } from "@/hooks/useIngredients";
+import { Upload, Search, RefreshCw, Trash2, Plus, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AlimentsPage() {
-  const { aliments, allAliments, isLoading, filters, setFilters, deleteAliment, loadFromMarkdown } =
-    useAliments();
+  const {
+    ingredients,
+    allIngredients,
+    isLoading,
+    hasData,
+    filters,
+    setFilters,
+    loadAllIngredients,
+    importSampleData,
+    clearDatabase,
+  } = useIngredients();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoadingMarkdown, setIsLoadingMarkdown] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [importStatus, setImportStatus] = useState<{
+    message: string;
+    type: "info" | "success" | "error";
+  } | null>(null);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setFilters({ ...filters, search: value });
   };
 
-  const handleDeleteAliment = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet aliment ?")) return;
+  const handleImport = async () => {
+    setIsImporting(true);
+    setImportStatus({
+      message: "Import en cours...",
+      type: "info",
+    });
 
     try {
-      await deleteAliment(id);
-      alert("Aliment supprimé avec succès");
+      const result = await importSampleData();
+
+      if (result.success) {
+        setImportStatus({
+          message: `✅ Import réussi: ${result.imported} ingrédients importés`,
+          type: "success",
+        });
+        setTimeout(() => setImportStatus(null), 3000);
+      } else {
+        setImportStatus({
+          message: `❌ Erreurs lors de l'import`,
+          type: "error",
+        });
+      }
     } catch (error) {
-      alert("Erreur lors de la suppression");
+      setImportStatus({
+        message: `❌ Erreur: ${error}`,
+        type: "error",
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
-  const handleLoadFromMarkdown = async () => {
-    setIsLoadingMarkdown(true);
+  const handleClear = async () => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer tous les ingrédients CIQUAL ?")) {
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStatus({
+      message: "Suppression en cours...",
+      type: "info",
+    });
+
     try {
-      await loadFromMarkdown();
-      alert("Aliments chargés avec succès !");
+      const result = await clearDatabase();
+
+      if (result.success) {
+        setImportStatus({
+          message: `✅ Base vidée: ${result.deleted} ingrédients supprimés`,
+          type: "success",
+        });
+        setTimeout(() => setImportStatus(null), 3000);
+      } else {
+        setImportStatus({
+          message: `❌ Erreur lors de la suppression`,
+          type: "error",
+        });
+      }
     } catch (error) {
-      alert("Erreur lors du chargement des aliments");
+      setImportStatus({
+        message: `❌ Erreur: ${error}`,
+        type: "error",
+      });
     } finally {
-      setIsLoadingMarkdown(false);
+      setIsImporting(false);
     }
   };
 
   return (
-    <MainLayout title="Aliments">
+    <MainLayout title="Aliments CIQUAL">
       <div className="flex gap-6">
         {/* Sidebar Filtres */}
         <aside className="w-64 flex-shrink-0 space-y-4">
-          <AlimentFilters
+          <IngredientFilters
             filters={filters}
             onChange={setFilters}
-            totalCount={allAliments.length}
-            filteredCount={aliments.length}
+            totalCount={allIngredients.length}
+            filteredCount={ingredients.length}
           />
         </aside>
 
         {/* Contenu Principal */}
         <div className="flex-1 space-y-6">
+          {/* Import Status */}
+          {importStatus && (
+            <Alert
+              variant={
+                importStatus.type === "error" ? "destructive" : "default"
+              }
+            >
+              <AlertDescription>{importStatus.message}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Header avec actions */}
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Barre de recherche */}
@@ -66,7 +146,7 @@ export default function AlimentsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Rechercher un aliment..."
+                placeholder="Rechercher un ingrédient..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
@@ -75,57 +155,85 @@ export default function AlimentsPage() {
 
             {/* Boutons d'action */}
             <div className="flex gap-2">
-              <Button
-                onClick={handleLoadFromMarkdown}
-                disabled={isLoadingMarkdown}
-                variant="default"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingMarkdown ? 'animate-spin' : ''}`} />
-                Charger depuis Markdown
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/aliments/import">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importer
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href="/aliments/nouveau">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nouveau
-                </Link>
-              </Button>
+              {!hasData && (
+                <Button
+                  onClick={handleImport}
+                  disabled={isImporting}
+                  variant="default"
+                >
+                  <Upload
+                    className={`h-4 w-4 mr-2 ${
+                      isImporting ? "animate-spin" : ""
+                    }`}
+                  />
+                  Importer 300 aliments
+                </Button>
+              )}
+              {hasData && (
+                <>
+                  <Button
+                    onClick={() => setShowAddModal(true)}
+                    variant="default"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter un aliment
+                  </Button>
+                  <Button
+                    onClick={loadAllIngredients}
+                    disabled={isLoading}
+                    variant="outline"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 mr-2 ${
+                        isLoading ? "animate-spin" : ""
+                      }`}
+                    />
+                    Actualiser
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Maintenance</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleClear}
+                        className="text-destructive focus:text-destructive"
+                        disabled={isImporting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Vider la base
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Grid des aliments */}
+          {/* Grid des ingrédients */}
           {isLoading ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Chargement...</p>
             </div>
-          ) : aliments.length === 0 ? (
+          ) : ingredients.length === 0 ? (
             <div className="text-center py-12">
-              {allAliments.length === 0 ? (
+              {allIngredients.length === 0 ? (
                 <div className="space-y-4">
-                  <p className="text-lg font-medium">Aucun aliment dans la base</p>
-                  <p className="text-sm text-muted-foreground">
-                    Chargez les aliments depuis les fichiers Markdown du dossier /fiche_menu
+                  <p className="text-lg font-medium">
+                    Aucun ingrédient dans la base CIQUAL
                   </p>
-                  <div className="flex gap-3 justify-center">
-                    <Button
-                      onClick={handleLoadFromMarkdown}
-                      disabled={isLoadingMarkdown}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Charger les aliments
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href="/aliments/nouveau">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Créer un aliment
-                      </Link>
-                    </Button>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Importez les données d'exemple (~93 ingrédients) pour
+                    commencer
+                  </p>
+                  <Button onClick={handleImport} disabled={isImporting}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importer les données
+                  </Button>
                 </div>
               ) : (
                 <div>
@@ -138,17 +246,27 @@ export default function AlimentsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aliments.map((aliment) => (
-                <AlimentCard
-                  key={aliment.id}
-                  aliment={aliment}
-                  onDelete={handleDeleteAliment}
-                />
+              {ingredients.map((ingredient) => (
+                <IngredientCard key={ingredient.id} ingredient={ingredient} />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Modal Ajout d'aliment */}
+      <AddIngredientModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onIngredientAdded={() => {
+          loadAllIngredients();
+          setImportStatus({
+            message: "✅ Ingrédient ajouté avec succès",
+            type: "success",
+          });
+          setTimeout(() => setImportStatus(null), 3000);
+        }}
+      />
     </MainLayout>
   );
 }
