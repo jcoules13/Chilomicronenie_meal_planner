@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { EXAMPLE_RECIPES } from "@/data/recipes-examples";
 import { Recipe } from "@/types/recipe";
 import { calculerPourcentageMCT, validerRecette } from "@/types/recipe";
+import { adapterRecetteAuBudget } from "@/lib/recipe-generator";
+import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import {
   Clock,
@@ -21,6 +23,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  Lightbulb,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -30,7 +33,29 @@ interface PageProps {
 
 export default function RecetteDetailPage({ params }: PageProps) {
   const { id } = use(params);
-  const recipe = EXAMPLE_RECIPES.find((r) => r.id === id);
+  const recipeOriginal = EXAMPLE_RECIPES.find((r) => r.id === id);
+
+  // Charger le profil utilisateur
+  const { profile } = useProfile();
+
+  // Calculer le budget lipides par repas
+  const budgetLipidesParRepas = useMemo(() => {
+    if (!profile?.valeurs_calculees?.macros_quotidiens?.lipides_g) {
+      return null;
+    }
+    return profile.valeurs_calculees.macros_quotidiens.lipides_g / 2;
+  }, [profile]);
+
+  // Adapter la recette au budget utilisateur
+  const adaptation = useMemo(() => {
+    if (!recipeOriginal || !budgetLipidesParRepas) {
+      return null;
+    }
+    return adapterRecetteAuBudget(recipeOriginal, budgetLipidesParRepas);
+  }, [recipeOriginal, budgetLipidesParRepas]);
+
+  // Utiliser la recette adaptée si disponible, sinon l'originale
+  const recipe = adaptation?.recette_adaptee || recipeOriginal;
 
   if (!recipe) {
     return (
@@ -99,7 +124,17 @@ export default function RecetteDetailPage({ params }: PageProps) {
               {s}
             </Badge>
           ))}
+          {adaptation?.badge_adaptation && (
+            <Badge className="bg-orange-100 text-orange-800 font-medium">
+              {adaptation.badge_adaptation}
+            </Badge>
+          )}
         </div>
+        {budgetLipidesParRepas && (
+          <p className="text-sm text-blue-600 mb-2">
+            Budget actuel: {budgetLipidesParRepas.toFixed(1)}g de lipides par repas
+          </p>
+        )}
       </div>
 
       {/* Validation */}
@@ -129,6 +164,61 @@ export default function RecetteDetailPage({ params }: PageProps) {
             </ul>
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Modifications d'adaptation */}
+      {adaptation?.modifications_appliquees && adaptation.modifications_appliquees.length > 0 && (
+        <Card className="p-6 bg-orange-50 border-orange-200">
+          <h2 className="text-xl font-bold mb-3 flex items-center text-orange-900">
+            <Lightbulb className="w-5 h-5 mr-2" />
+            Adaptations appliquées pour votre budget lipides
+          </h2>
+          <div className="space-y-3">
+            {adaptation.modifications_appliquees.map((modif, i) => (
+              <div key={i} className="flex items-start bg-white rounded p-3 border border-orange-200">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                  {i + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-xs">
+                      {modif.action}
+                    </Badge>
+                    {modif.ingredient && (
+                      <span className="font-medium text-orange-900">{modif.ingredient}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700">{modif.description}</p>
+                  {modif.economie_g && modif.economie_g > 0 && (
+                    <p className="text-xs text-green-700 mt-1 font-medium">
+                      💰 Économie: {modif.economie_g}g de lipides
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Instructions spéciales */}
+          {recipeOriginal?.adaptations_budget && adaptation.niveau_applique &&
+           recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales &&
+           recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales!.length > 0 && (
+            <div className="mt-4 p-4 bg-white rounded border border-orange-200">
+              <h3 className="font-semibold text-orange-900 mb-2 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                Instructions spéciales
+              </h3>
+              <ul className="space-y-2">
+                {recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales!.map((instruction, i) => (
+                  <li key={i} className="flex items-start text-sm">
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
