@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EXAMPLE_RECIPES } from "@/data/recipes-examples";
-import { Recipe, RecipeFilters, TypeRecette, RepasCible, DifficulteRecette, ResultatAdaptation } from "@/types/recipe";
+import { ALL_RECIPE_TEMPLATES } from "@/data/recipe-templates";
+import { RecipeTemplate, RecipeFilters, TypeRecette, RepasCible, DifficulteRecette } from "@/types/recipe";
 import { Saison } from "@/types/aliment";
-import { searchRecipes, adapterRecetteAuBudget } from "@/lib/recipe-generator";
 import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import {
@@ -42,36 +41,43 @@ export default function RecettesPage() {
     return profile.valeurs_calculees.macros_quotidiens.lipides_g / 2;
   }, [profile]);
 
-  // Rechercher les recettes
-  const searchResult = useMemo(() => {
-    return searchRecipes(EXAMPLE_RECIPES, {
-      ...filters,
-      recherche_texte: searchText || undefined,
-    });
-  }, [searchText, filters]);
+  // Filtrer les templates selon les critères
+  const filteredTemplates = useMemo(() => {
+    let templates = ALL_RECIPE_TEMPLATES;
 
-  // Adapter les recettes au budget utilisateur
-  const adaptedRecipes = useMemo(() => {
-    if (!budgetLipidesParRepas) {
-      // Pas de profil → afficher les recettes sans adaptation
-      return searchResult.recipes.map(recipe => ({
-        recipe,
-        adaptation: null,
-      }));
+    // Filtres de base
+    if (filters.type) {
+      templates = templates.filter(t => t.type === filters.type);
+    }
+    if (filters.repas_cible) {
+      templates = templates.filter(t => t.repas_cible === filters.repas_cible);
+    }
+    if (filters.difficulte) {
+      templates = templates.filter(t => t.difficulte === filters.difficulte);
+    }
+    if (filters.saison) {
+      templates = templates.filter(t => t.saison.includes(filters.saison!));
+    }
+    if (filters.temps_max_min) {
+      templates = templates.filter(t => t.temps_total_min <= filters.temps_max_min!);
     }
 
-    return searchResult.recipes
-      .map(recipe => {
-        const resultat = adapterRecetteAuBudget(recipe, budgetLipidesParRepas);
-        return {
-          recipe,
-          adaptation: resultat,
-        };
-      })
-      .filter(item => item.adaptation?.compatible !== false); // Masquer les recettes incompatibles
-  }, [searchResult.recipes, budgetLipidesParRepas]);
+    // Recherche texte
+    if (searchText) {
+      const texte = searchText.toLowerCase();
+      templates = templates.filter(t => {
+        const dans_titre = t.titre.toLowerCase().includes(texte);
+        const dans_ingredients = t.ingredients_template.some(ing =>
+          ing.nom.toLowerCase().includes(texte)
+        );
+        return dans_titre || dans_ingredients;
+      });
+    }
 
-  const total = adaptedRecipes.length;
+    return templates;
+  }, [searchText, filters]);
+
+  const total = filteredTemplates.length;
 
   return (
     <MainLayout title="Recettes">
@@ -227,19 +233,19 @@ export default function RecettesPage() {
         </Card>
       )}
 
-      {/* Liste des recettes */}
+      {/* Liste des recettes templates */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adaptedRecipes.map((item) => (
-          <RecipeCard
-            key={item.recipe.id}
-            recipe={item.adaptation?.recette_adaptee || item.recipe}
-            adaptation={item.adaptation}
+        {filteredTemplates.map((template) => (
+          <RecipeTemplateCard
+            key={template.id}
+            template={template}
+            budgetLipidesParRepas={budgetLipidesParRepas}
           />
         ))}
       </div>
 
       {/* Aucun résultat */}
-      {adaptedRecipes.length === 0 && (
+      {filteredTemplates.length === 0 && (
         <Card className="p-12 text-center">
           <ChefHat className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium mb-2">Aucune recette trouvée</h3>
@@ -253,13 +259,13 @@ export default function RecettesPage() {
   );
 }
 
-// Composant carte de recette
-function RecipeCard({
-  recipe,
-  adaptation
+// Composant carte de recette template
+function RecipeTemplateCard({
+  template,
+  budgetLipidesParRepas,
 }: {
-  recipe: Recipe;
-  adaptation: ResultatAdaptation | null;
+  template: RecipeTemplate;
+  budgetLipidesParRepas: number | null;
 }) {
   const difficulteColors = {
     facile: "bg-green-100 text-green-800",
@@ -274,92 +280,88 @@ function RecipeCard({
   };
 
   return (
-    <Link href={`/recettes/${recipe.id}`}>
+    <Link href={`/recettes/${template.id}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         <div className="p-6 flex-1">
           {/* En-tête */}
           <div className="flex items-start justify-between mb-4">
             <h3 className="font-semibold text-lg line-clamp-2 flex-1">
-              {recipe.titre}
+              {template.titre}
             </h3>
-            {recipe.favoris && (
+            {template.favoris && (
               <Heart className="w-5 h-5 text-red-500 fill-current ml-2 flex-shrink-0" />
             )}
           </div>
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
-            <Badge className={difficulteColors[recipe.difficulte]}>
-              {recipe.difficulte}
+            <Badge className={difficulteColors[template.difficulte]}>
+              {template.difficulte}
             </Badge>
-            <Badge className={repasColors[recipe.repas_cible]}>
-              {recipe.repas_cible === "REPAS_1" ? "11h" : recipe.repas_cible === "REPAS_2" ? "17h" : "Tous"}
+            <Badge className={repasColors[template.repas_cible]}>
+              {template.repas_cible === "REPAS_1" ? "11h" : template.repas_cible === "REPAS_2" ? "17h" : "Tous"}
             </Badge>
-            {adaptation?.badge_adaptation && (
-              <Badge variant="outline" className="text-xs">
-                {adaptation.badge_adaptation}
-              </Badge>
-            )}
+            <Badge className="bg-green-100 text-green-800">
+              Adaptable
+            </Badge>
           </div>
 
           {/* Infos rapides */}
-          <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
             <div className="flex items-center">
               <Clock className="w-4 h-4 mr-1 text-gray-500" />
-              <span>{recipe.temps_total_min}min</span>
+              <span>{template.temps_total_min}min</span>
             </div>
             <div className="flex items-center">
-              <Flame className="w-4 h-4 mr-1 text-orange-500" />
-              <span>{recipe.nutrition.calories} kcal</span>
-            </div>
-            <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
-              <span>{recipe.nutrition.proteines_g}g P</span>
+              <ChefHat className="w-4 h-4 mr-1 text-blue-500" />
+              <span>Sur mesure</span>
             </div>
           </div>
 
-          {/* Valeurs nutritionnelles */}
-          <div className="text-xs text-gray-600 space-y-1">
-            <div className="flex justify-between">
-              <span>Lipides:</span>
-              <span className="font-medium">{recipe.nutrition.lipides_g}g</span>
+          {/* Aperçu ingrédients */}
+          <div className="mb-4">
+            <p className="text-sm font-medium mb-2">Ingrédients principaux :</p>
+            <div className="text-xs text-gray-600 space-y-1">
+              {template.ingredients_template
+                .filter(ing => ing.role === "proteine_principale" || ing.role === "feculent")
+                .slice(0, 3)
+                .map((ing, idx) => (
+                  <div key={idx} className="flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>
+                    <span>{ing.nom}</span>
+                  </div>
+                ))}
             </div>
-            <div className="flex justify-between">
-              <span>Glucides:</span>
-              <span className="font-medium">{recipe.nutrition.glucides_g}g</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Fibres:</span>
-              <span className="font-medium">{recipe.nutrition.fibres_g}g</span>
-            </div>
-            {recipe.nutrition.ig_moyen && (
-              <div className="flex justify-between">
-                <span>IG moyen:</span>
-                <span className="font-medium">{recipe.nutrition.ig_moyen}</span>
-              </div>
-            )}
           </div>
 
           {/* Info adaptation */}
-          {adaptation?.modifications_appliquees && adaptation.modifications_appliquees.length > 0 && (
-            <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
-              <p className="font-medium text-blue-900 mb-1">Adaptations:</p>
+          {budgetLipidesParRepas && (
+            <div className="p-2 bg-blue-50 rounded text-xs">
+              <p className="font-medium text-blue-900 mb-1">🎯 Recette adaptée pour vous</p>
               <p className="text-blue-700">
-                {adaptation.modifications_appliquees.length} modification{adaptation.modifications_appliquees.length > 1 ? "s" : ""} appliquée{adaptation.modifications_appliquees.length > 1 ? "s" : ""}
+                Les quantités seront calculées selon votre profil ({budgetLipidesParRepas.toFixed(1)}g lipides max)
+              </p>
+            </div>
+          )}
+
+          {!budgetLipidesParRepas && (
+            <div className="p-2 bg-gray-50 rounded text-xs">
+              <p className="text-gray-700">
+                Configurez votre profil pour voir les quantités adaptées
               </p>
             </div>
           )}
 
           {/* Tags */}
           <div className="mt-4 flex flex-wrap gap-1">
-            {recipe.tags?.slice(0, 3).map((tag) => (
+            {template.tags?.slice(0, 3).map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs">
                 {tag.replace(/_/g, " ")}
               </Badge>
             ))}
-            {recipe.tags && recipe.tags.length > 3 && (
+            {template.tags && template.tags.length > 3 && (
               <Badge variant="outline" className="text-xs">
-                +{recipe.tags.length - 3}
+                +{template.tags.length - 3}
               </Badge>
             )}
           </div>
@@ -368,8 +370,8 @@ function RecipeCard({
         {/* Footer */}
         <div className="px-6 py-3 bg-gray-50 border-t">
           <div className="flex items-center justify-between text-xs text-gray-600">
-            <span>{recipe.ingredients.length} ingrédients</span>
-            <span>{recipe.etapes.length} étapes</span>
+            <span>{template.ingredients_template.length} ingrédients</span>
+            <span>{template.etapes.length} étapes</span>
           </div>
         </div>
       </Card>

@@ -1,14 +1,13 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useMemo, useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EXAMPLE_RECIPES } from "@/data/recipes-examples";
+import { ALL_RECIPE_TEMPLATES } from "@/data/recipe-templates";
 import { Recipe } from "@/types/recipe";
-import { calculerPourcentageMCT, validerRecette } from "@/types/recipe";
-import { adapterRecetteAuBudget } from "@/lib/recipe-generator";
+import { adapterRecetteAuProfil } from "@/lib/recipe-adaptation";
 import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import {
@@ -24,6 +23,9 @@ import {
   CheckCircle2,
   Info,
   Lightbulb,
+  TrendingUp,
+  Droplet,
+  Wheat,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -33,31 +35,40 @@ interface PageProps {
 
 export default function RecetteDetailPage({ params }: PageProps) {
   const { id } = use(params);
-  const recipeOriginal = EXAMPLE_RECIPES.find((r) => r.id === id);
+  const template = ALL_RECIPE_TEMPLATES.find((r) => r.id === id);
 
   // Charger le profil utilisateur
   const { profile } = useProfile();
 
-  // Calculer le budget lipides par repas
-  const budgetLipidesParRepas = useMemo(() => {
-    if (!profile?.valeurs_calculees?.macros_quotidiens?.lipides_g) {
-      return null;
+  // État pour la recette adaptée
+  const [recetteAdaptee, setRecetteAdaptee] = useState<Recipe | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Calculer la recette adaptée quand le profil est disponible
+  useEffect(() => {
+    if (!template || !profile) {
+      return;
     }
-    return profile.valeurs_calculees.macros_quotidiens.lipides_g / 2;
-  }, [profile]);
 
-  // Adapter la recette au budget utilisateur
-  const adaptation = useMemo(() => {
-    if (!recipeOriginal || !budgetLipidesParRepas) {
-      return null;
-    }
-    return adapterRecetteAuBudget(recipeOriginal, budgetLipidesParRepas);
-  }, [recipeOriginal, budgetLipidesParRepas]);
+    const adapter = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const adapted = await adapterRecetteAuProfil(template, profile);
+        setRecetteAdaptee(adapted);
+      } catch (err) {
+        console.error("Erreur adaptation recette:", err);
+        setError(err instanceof Error ? err.message : "Erreur inconnue");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Utiliser la recette adaptée si disponible, sinon l'originale
-  const recipe = adaptation?.recette_adaptee || recipeOriginal;
+    adapter();
+  }, [template, profile]);
 
-  if (!recipe) {
+  if (!template) {
     return (
       <MainLayout title="Recette introuvable">
       <div>
@@ -79,11 +90,8 @@ export default function RecetteDetailPage({ params }: PageProps) {
     );
   }
 
-  const validation = validerRecette(recipe);
-  const pctMCT = calculerPourcentageMCT(recipe);
-
   return (
-    <MainLayout title={recipe.titre}>
+    <MainLayout title={template.titre}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -108,175 +116,158 @@ export default function RecetteDetailPage({ params }: PageProps) {
 
       {/* Titre et infos principales */}
       <div>
-        <h1 className="text-4xl font-bold mb-4">{recipe.titre}</h1>
+        <h1 className="text-4xl font-bold mb-4">{template.titre}</h1>
         <div className="flex flex-wrap gap-2 mb-4">
           <Badge className="bg-blue-100 text-blue-800">
-            {recipe.repas_cible === "REPAS_1" ? "Repas 1 (11h)" : recipe.repas_cible === "REPAS_2" ? "Repas 2 (17h)" : "Tous repas"}
+            {template.repas_cible === "REPAS_1" ? "Repas 1 (11h)" : template.repas_cible === "REPAS_2" ? "Repas 2 (17h)" : "Tous repas"}
           </Badge>
           <Badge className="bg-green-100 text-green-800">
-            {recipe.difficulte}
+            {template.difficulte}
           </Badge>
           <Badge className="bg-purple-100 text-purple-800">
-            {recipe.type.replace(/_/g, " ")}
+            {template.type.replace(/_/g, " ")}
           </Badge>
-          {recipe.saison.map((s) => (
+          {template.saison.map((s) => (
             <Badge key={s} variant="outline">
               {s}
             </Badge>
           ))}
-          {adaptation?.badge_adaptation && (
+          {recetteAdaptee && (
             <Badge className="bg-orange-100 text-orange-800 font-medium">
-              {adaptation.badge_adaptation}
+              Adaptée pour vous
             </Badge>
           )}
         </div>
-        {budgetLipidesParRepas && (
-          <p className="text-sm text-blue-600 mb-2">
-            Budget actuel: {budgetLipidesParRepas.toFixed(1)}g de lipides par repas
-          </p>
-        )}
       </div>
 
-      {/* Validation */}
-      {!validation.valide && validation.erreurs.length > 0 && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Attention</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc list-inside">
-              {validation.erreurs.map((err, i) => (
-                <li key={i}>{err}</li>
-              ))}
-            </ul>
+      {/* Alerte si pas de profil */}
+      {!profile && (
+        <Alert className="bg-yellow-50 border-yellow-200">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertTitle className="text-yellow-900">Profil non configuré</AlertTitle>
+          <AlertDescription className="text-yellow-800">
+            Configurez votre profil pour voir les quantités adaptées à vos besoins.
+            <Link href="/profil">
+              <Button variant="outline" size="sm" className="mt-2">
+                Configurer mon profil
+              </Button>
+            </Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {validation.avertissements.length > 0 && (
+      {/* Loading */}
+      {isLoading && (
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Remarques</AlertTitle>
+          <AlertTitle>Calcul en cours</AlertTitle>
           <AlertDescription>
-            <ul className="list-disc list-inside">
-              {validation.avertissements.map((warn, i) => (
-                <li key={i}>{warn}</li>
-              ))}
-            </ul>
+            Adaptation de la recette à votre profil...
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Modifications d'adaptation */}
-      {adaptation?.modifications_appliquees && adaptation.modifications_appliquees.length > 0 && (
-        <Card className="p-6 bg-orange-50 border-orange-200">
-          <h2 className="text-xl font-bold mb-3 flex items-center text-orange-900">
-            <Lightbulb className="w-5 h-5 mr-2" />
-            Adaptations appliquées pour votre budget lipides
-          </h2>
-          <div className="space-y-3">
-            {adaptation.modifications_appliquees.map((modif, i) => (
-              <div key={i} className="flex items-start bg-white rounded p-3 border border-orange-200">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
-                  {i + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-xs">
-                      {modif.action}
-                    </Badge>
-                    {modif.ingredient && (
-                      <span className="font-medium text-orange-900">{modif.ingredient}</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700">{modif.description}</p>
-                  {modif.economie_g && modif.economie_g > 0 && (
-                    <p className="text-xs text-green-700 mt-1 font-medium">
-                      💰 Économie: {modif.economie_g}g de lipides
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Instructions spéciales */}
-          {recipeOriginal?.adaptations_budget && adaptation.niveau_applique &&
-           recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales &&
-           recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales!.length > 0 && (
-            <div className="mt-4 p-4 bg-white rounded border border-orange-200">
-              <h3 className="font-semibold text-orange-900 mb-2 flex items-center">
-                <Info className="w-4 h-4 mr-2" />
-                Instructions spéciales
-              </h3>
-              <ul className="space-y-2">
-                {recipeOriginal.adaptations_budget[adaptation.niveau_applique].instructions_speciales!.map((instruction, i) => (
-                  <li key={i} className="flex items-start text-sm">
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-orange-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{instruction}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Card>
+      {/* Erreur */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erreur</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
+      {/* Grid principal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Colonne principale */}
         <div className="lg:col-span-2 space-y-6">
           {/* Infos rapides */}
           <Card className="p-6">
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <Clock className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-                <div className="text-2xl font-bold">{recipe.temps_total_min}</div>
-                <div className="text-xs text-gray-600">minutes</div>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Temps total</p>
+                  <p className="text-lg font-semibold">{template.temps_total_min} min</p>
+                </div>
               </div>
-              <div>
-                <ChefHat className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-                <div className="text-2xl font-bold">{recipe.etapes.length}</div>
-                <div className="text-xs text-gray-600">étapes</div>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <ChefHat className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Difficulté</p>
+                  <p className="text-lg font-semibold capitalize">{template.difficulte}</p>
+                </div>
               </div>
-              <div>
-                <Users className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-                <div className="text-2xl font-bold">{recipe.portions}</div>
-                <div className="text-xs text-gray-600">portion{recipe.portions > 1 ? "s" : ""}</div>
-              </div>
-              <div>
-                <Flame className="w-6 h-6 mx-auto mb-2 text-orange-500" />
-                <div className="text-2xl font-bold">{recipe.nutrition.calories}</div>
-                <div className="text-xs text-gray-600">kcal</div>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <Users className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Portions</p>
+                  <p className="text-lg font-semibold">1 (sur mesure)</p>
+                </div>
               </div>
             </div>
           </Card>
 
           {/* Ingrédients */}
           <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Ingrédients</h2>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <ChefHat className="w-6 h-6 text-blue-600" />
+              Ingrédients {recetteAdaptee && "(calculés pour vous)"}
+            </h2>
+
+            {!recetteAdaptee && (
+              <Alert className="mb-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Les quantités seront calculées selon votre profil
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-3">
-              {recipe.ingredients.map((ing, i) => (
-                <div key={i} className="flex items-start">
-                  <div className="w-6 h-6 rounded-full bg-green-100 text-green-800 flex items-center justify-center text-xs font-medium mr-3 flex-shrink-0 mt-0.5">
-                    {i + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-baseline">
-                      <span className="font-medium">{ing.nom}</span>
-                      <span className="text-gray-600 ml-2">
-                        {ing.quantite} {ing.unite}
-                      </span>
+              {recetteAdaptee ? (
+                // Ingrédients avec quantités calculées
+                recetteAdaptee.ingredients.map((ingredient, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="font-medium">{ingredient.nom}</span>
                     </div>
-                    {ing.notes && (
-                      <div className="text-sm text-gray-500 italic mt-1">
-                        {ing.notes}
-                      </div>
-                    )}
-                    <Badge variant="outline" className="text-xs mt-1">
-                      {ing.categorie}
-                    </Badge>
+                    <span className="text-gray-700 font-semibold">
+                      {ingredient.quantite}g
+                    </span>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                // Template sans quantités
+                template.ingredients_template.map((ingredient, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-gray-400" />
+                      <span className="font-medium text-gray-600">{ingredient.nom}</span>
+                      {ingredient.role && (
+                        <Badge variant="outline" className="text-xs">
+                          {ingredient.role.replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-gray-400 text-sm italic">
+                      Quantité à calculer
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
 
@@ -284,40 +275,27 @@ export default function RecetteDetailPage({ params }: PageProps) {
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4">Préparation</h2>
             <div className="space-y-6">
-              {recipe.etapes.map((etape) => (
-                <div key={etape.numero} className="flex">
-                  <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-4 flex-shrink-0">
-                    {etape.numero}
+              {template.etapes.map((etape) => (
+                <div key={etape.numero} className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                      {etape.numero}
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">{etape.titre}</h3>
-                    <p className="text-gray-700 mb-3">{etape.description}</p>
-                    <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                      {etape.duree_min && (
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {etape.duree_min} min
-                        </div>
-                      )}
-                      {etape.temperature && (
-                        <div className="flex items-center">
-                          <Flame className="w-4 h-4 mr-1" />
-                          {etape.temperature}
-                        </div>
-                      )}
-                    </div>
-                    {etape.materiel && etape.materiel.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-sm font-medium">Matériel: </span>
-                        <span className="text-sm text-gray-600">
-                          {etape.materiel.join(", ")}
-                        </span>
-                      </div>
+                    <h3 className="font-semibold text-lg mb-1">{etape.titre}</h3>
+                    <p className="text-gray-700 mb-2">{etape.description}</p>
+                    {etape.duree_min && (
+                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {etape.duree_min} min
+                      </p>
                     )}
                     {etape.conseils && etape.conseils.length > 0 && (
-                      <div className="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-2">
-                        <p className="text-sm text-yellow-800">
-                          💡 {etape.conseils.join(". ")}
+                      <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                        <p className="text-xs text-yellow-800 flex items-start gap-1">
+                          <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span>{etape.conseils.join(" • ")}</span>
                         </p>
                       </div>
                     )}
@@ -328,203 +306,123 @@ export default function RecetteDetailPage({ params }: PageProps) {
           </Card>
 
           {/* Conseils */}
-          {recipe.conseils && recipe.conseils.length > 0 && (
+          {template.conseils && template.conseils.length > 0 && (
             <Card className="p-6 bg-blue-50 border-blue-200">
-              <h2 className="text-xl font-bold mb-3 flex items-center">
-                <Info className="w-5 h-5 mr-2 text-blue-600" />
-                Conseils du chef
+              <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-blue-600" />
+                Conseils
               </h2>
               <ul className="space-y-2">
-                {recipe.conseils.map((conseil, i) => (
-                  <li key={i} className="flex items-start">
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-blue-900">{conseil}</span>
+                {template.conseils.map((conseil, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700">{conseil}</span>
                   </li>
                 ))}
               </ul>
-            </Card>
-          )}
-
-          {/* Variantes */}
-          {recipe.variantes && recipe.variantes.length > 0 && (
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Variantes</h2>
-              <div className="space-y-4">
-                {recipe.variantes.map((variante, i) => (
-                  <div key={i} className="border-l-4 border-purple-400 pl-4">
-                    <h3 className="font-semibold text-purple-900 mb-1">
-                      {variante.nom}
-                    </h3>
-                    <p className="text-gray-700 mb-1">{variante.modifications}</p>
-                    {variante.notes && (
-                      <p className="text-sm text-gray-600 italic">{variante.notes}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
             </Card>
           )}
         </div>
 
-        {/* Colonne latérale */}
+        {/* Colonne latérale - Nutrition */}
         <div className="space-y-6">
           {/* Valeurs nutritionnelles */}
           <Card className="p-6">
             <h2 className="text-xl font-bold mb-4">Valeurs nutritionnelles</h2>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Calories</span>
-                  <span className="text-sm font-bold">{recipe.nutrition.calories} kcal</span>
+            {recetteAdaptee ? (
+              <div className="space-y-4">
+                <div className="text-center p-4 bg-gradient-to-r from-orange-100 to-red-100 rounded-lg">
+                  <Flame className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                  <p className="text-3xl font-bold text-gray-900">
+                    {recetteAdaptee.nutrition.calories}
+                  </p>
+                  <p className="text-sm text-gray-600">kcal</p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-orange-500 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (recipe.nutrition.calories / 1200) * 100)}%` }}
-                  />
-                </div>
-              </div>
 
-              <hr className="my-2" />
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <span className="font-medium text-gray-700">Protéines</span>
+                      </div>
+                      <span className="text-lg font-bold text-blue-600">
+                        {recetteAdaptee.nutrition.proteines_g}g
+                      </span>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Protéines</span>
-                  <span className="text-sm font-bold">{recipe.nutrition.proteines_g}g</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (recipe.nutrition.proteines_g / 60) * 100)}%` }}
-                  />
-                </div>
-              </div>
+                  <div className="p-3 bg-yellow-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Droplet className="w-4 h-4 text-yellow-600" />
+                        <span className="font-medium text-gray-700">Lipides</span>
+                      </div>
+                      <span className="text-lg font-bold text-yellow-600">
+                        {recetteAdaptee.nutrition.lipides_g}g
+                      </span>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Lipides</span>
-                  <span className="text-sm font-bold">{recipe.nutrition.lipides_g}g</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-yellow-500 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (recipe.nutrition.lipides_g / 12) * 100)}%` }}
-                  />
-                </div>
-              </div>
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Wheat className="w-4 h-4 text-green-600" />
+                        <span className="font-medium text-gray-700">Glucides</span>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">
+                        {recetteAdaptee.nutrition.glucides_g}g
+                      </span>
+                    </div>
+                  </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Glucides</span>
-                  <span className="text-sm font-bold">{recipe.nutrition.glucides_g}g</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{ width: `${Math.min(100, (recipe.nutrition.glucides_g / 80) * 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">Fibres</span>
-                  <span className="text-sm font-bold">{recipe.nutrition.fibres_g}g</span>
-                </div>
-              </div>
-
-              {recipe.nutrition.ig_moyen && (
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">IG moyen</span>
-                    <span className="text-sm font-bold">{recipe.nutrition.ig_moyen}</span>
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-gray-700">Fibres</span>
+                      <span className="text-lg font-bold text-purple-600">
+                        {recetteAdaptee.nutrition.fibres_g}g
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
+
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    <strong>Parfaitement adapté</strong> à votre profil et vos besoins nutritionnels
+                  </AlertDescription>
+                </Alert>
+              </div>
+            ) : (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Les valeurs nutritionnelles seront calculées selon votre profil
+                </AlertDescription>
+              </Alert>
+            )}
           </Card>
 
-          {/* Détail des lipides */}
-          <Card className="p-6 bg-yellow-50 border-yellow-200">
-            <h2 className="text-xl font-bold mb-4">Détail des lipides</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>MCT/Coco</span>
-                <span className="font-bold text-green-700">
-                  {recipe.nutrition.lipides_detail.mct_coco_g}g
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Huile d'olive</span>
-                <span className="font-medium">
-                  {recipe.nutrition.lipides_detail.huile_olive_g}g
-                </span>
-              </div>
-              {recipe.nutrition.lipides_detail.huile_sesame_g && recipe.nutrition.lipides_detail.huile_sesame_g > 0 && (
-                <div className="flex justify-between">
-                  <span>Huile de sésame</span>
-                  <span className="font-medium">
-                    {recipe.nutrition.lipides_detail.huile_sesame_g}g
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span>Naturels (protéines)</span>
-                <span className="font-medium">
-                  {recipe.nutrition.lipides_detail.naturels_proteines_g}g
-                </span>
-              </div>
-              <hr className="my-2" />
-              <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>{recipe.nutrition.lipides_g}g</span>
-              </div>
-              <div className="flex justify-between text-green-700">
-                <span>% MCT</span>
-                <span className="font-bold">{pctMCT.toFixed(1)}%</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* Matériel requis */}
-          {recipe.materiel_requis && recipe.materiel_requis.length > 0 && (
+          {/* Conservation */}
+          {template.stockage && (
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Matériel requis</h2>
-              <ul className="space-y-2">
-                {recipe.materiel_requis.map((mat, i) => (
-                  <li key={i} className="flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                    <span className="text-sm">{mat}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-
-          {/* Stockage */}
-          {recipe.stockage && (
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Conservation</h2>
-              <div className="space-y-3 text-sm">
-                {recipe.stockage.refrigerateur_jours && (
-                  <div className="flex justify-between">
-                    <span>Réfrigérateur</span>
-                    <span className="font-medium">
-                      {recipe.stockage.refrigerateur_jours} jours
-                    </span>
-                  </div>
+              <h2 className="text-xl font-bold mb-3">Conservation</h2>
+              <div className="space-y-2 text-sm">
+                {template.stockage.refrigerateur_jours && (
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Réfrigérateur:</span>
+                    <span>{template.stockage.refrigerateur_jours} jours</span>
+                  </p>
                 )}
-                {recipe.stockage.congelateur_mois && (
-                  <div className="flex justify-between">
-                    <span>Congélateur</span>
-                    <span className="font-medium">
-                      {recipe.stockage.congelateur_mois} mois
-                    </span>
-                  </div>
+                {template.stockage.congelateur_mois && (
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Congélateur:</span>
+                    <span>{template.stockage.congelateur_mois} mois</span>
+                  </p>
                 )}
-                {recipe.stockage.instructions && (
-                  <p className="text-gray-700 mt-3 pt-3 border-t">
-                    {recipe.stockage.instructions}
+                {template.stockage.instructions && (
+                  <p className="text-gray-600 text-xs mt-2">
+                    {template.stockage.instructions}
                   </p>
                 )}
               </div>
@@ -532,11 +430,11 @@ export default function RecetteDetailPage({ params }: PageProps) {
           )}
 
           {/* Tags */}
-          {recipe.tags && recipe.tags.length > 0 && (
+          {template.tags && template.tags.length > 0 && (
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Tags</h2>
+              <h2 className="text-xl font-bold mb-3">Tags</h2>
               <div className="flex flex-wrap gap-2">
-                {recipe.tags.map((tag) => (
+                {template.tags.map((tag) => (
                   <Badge key={tag} variant="outline">
                     {tag.replace(/_/g, " ")}
                   </Badge>

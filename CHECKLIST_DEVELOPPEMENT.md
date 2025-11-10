@@ -629,7 +629,22 @@ ingredients_menu ∩ ingredients_exclus = ∅
 
 ## 🔄 CHANGELOG
 
-### 2025-11-08 (Session actuelle) - PIVOT MAJEUR v0.2.0 🚀
+### 2025-11-10 (Session actuelle) - REFONTE SYSTÈME RECETTES (Option A) 🚀
+- ✨ **NOUVEAU** : Système de templates basé sur CIQUAL
+- ✨ **NOUVEAU** : Calcul automatique des quantités selon profil utilisateur
+- ✨ **NOUVEAU** : Optimisation intelligente avec blanc d'œuf
+- 📦 **Fichiers créés** :
+  - `/types/recipe.ts` : Ajout RecipeTemplate + IngredientTemplate
+  - `/lib/recipe-adaptation.ts` : Algorithme d'adaptation intelligent
+  - `/data/recipe-templates.ts` : Templates Dinde Quinoa + Poulet Lentilles
+- 🎨 **UI refonte** :
+  - `/app/recettes/page.tsx` : Affichage templates en aperçu
+  - `/app/recettes/[id]/page.tsx` : Calcul dynamique quantités + nutrition
+- 📚 **Documentation** : Mise à jour FUNCTIONS_INVENTORY.md
+- ✅ **Build** : OK sans erreurs TypeScript
+- 🎯 **Principe** : Recettes = templates 100g → quantités calculées au profil
+
+### 2025-11-08 (Session précédente) - PIVOT MAJEUR v0.2.0 🚀
 - 🎯 **Décision architecture** : Migration vers système CIQUAL + Recettes
 - 📋 **Plan C adopté** : Migration progressive (hybride intelligent)
 - 📚 **Documentation** : Refonte complète CHECKLIST_DEVELOPPEMENT.md

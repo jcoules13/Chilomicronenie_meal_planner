@@ -262,65 +262,74 @@ interface IngredientCiqual {
 
 ---
 
-## 🍳 Système de Recettes (Phase 11.2 - NOUVEAU)
+## 🍳 Système de Recettes (Phase 11.2 - REFONTE TEMPLATES)
 
 ### 📍 Localisation
-- **Types** : `/types/recipe.ts`
-- **Générateur** : `/lib/recipe-generator.ts`
-- **Exemples** : `/data/recipes-examples.ts`
+- **Types** : `/types/recipe.ts` (RecipeTemplate + Recipe)
+- **Adaptation** : `/lib/recipe-adaptation.ts` (NOUVEAU)
+- **Templates** : `/data/recipe-templates.ts` (NOUVEAU)
+- **Générateur (ancien)** : `/lib/recipe-generator.ts`
+- **Exemples (ancien)** : `/data/recipes-examples.ts`
 - **Page liste** : `/app/recettes/page.tsx`
 - **Page détail** : `/app/recettes/[id]/page.tsx`
-- **Template IA** : `/docs/recipe-generation-template.md`
 
-### 🎯 Structure Recette
+### 🎯 Structure Recette TEMPLATE (NOUVEAU)
 
 ```typescript
-interface Recipe {
+/**
+ * Template de recette - BASE 100g pour chaque ingrédient
+ * Les quantités sont calculées dynamiquement selon le profil utilisateur
+ */
+interface RecipeTemplate {
   id: string;
   titre: string;
   type: "plat_principal" | "entree" | "soupe" | "dessert" | "accompagnement";
   repas_cible: "REPAS_1" | "REPAS_2" | "LES_DEUX";
-  saison: Saison[];  // ["Printemps", "Été", "Automne", "Hiver"]
+  saison: Saison[];
 
   // Temps
   temps_preparation_min: number;
   temps_cuisson_min: number;
   temps_total_min: number;
-  portions: number;
 
-  // Ingrédients et préparation
-  ingredients: IngredientRecette[];
+  // Ingrédients TEMPLATE (SANS quantités fixes)
+  ingredients_template: IngredientTemplate[];  // Juste codes CIQUAL + rôle
+
+  // Étapes
   etapes: EtapeRecette[];
 
-  // Nutrition (valeurs CALCULÉES pour les portions indiquées)
-  nutrition: {
-    calories: number;
-    proteines_g: number;
-    lipides_g: number;
-    glucides_g: number;
-    fibres_g: number;
-    lipides_detail: {
-      mct_coco_g: number;
-      huile_olive_g: number;
-      huile_sesame_g?: number;
-      naturels_proteines_g: number;
-      autres_g: number;
-    };
-    ig_moyen?: number;
+  // Besoins de référence (pour 1 repas type)
+  besoins_reference: {
+    proteines_g: number;    // Ex: 180g pour utilisateur 102kg
+    lipides_max_g: number;  // Ex: 5g pour TG=14
+    fibres_g: number;       // Ex: 20g
+    ig_moyen_max: number;   // Ex: 50
   };
+}
 
-  // Informations complémentaires
-  conseils?: string[];
-  variantes?: VarianteRecette[];
-  materiel_requis?: string[];
-  tags?: string[];
-  difficulte: "facile" | "moyen" | "difficile";
-  cout_estime: "faible" | "moyen" | "eleve";
-  stockage?: {
-    refrigerateur_jours?: number;
-    congelateur_mois?: number;
-    instructions?: string;
-  };
+/**
+ * Ingrédient Template (sans quantité)
+ */
+interface IngredientTemplate {
+  code_ciqual: string;  // Code CIQUAL pour récupérer valeurs nutritionnelles
+  nom: string;
+  categorie: CategorieIngredient;
+  role?: "proteine_principale" | "proteine_complementaire" | "feculent" | "legume" | "lipide" | "autre";
+  notes?: string;
+  optionnel?: boolean;
+}
+```
+
+### 🎯 Structure Recette CALCULÉE (Recipe)
+
+```typescript
+/**
+ * Recette complète CALCULÉE avec quantités adaptées au profil
+ */
+interface Recipe {
+  // ... (même structure qu'avant mais avec quantités calculées)
+  ingredients: IngredientRecette[];  // Avec quantités calculées
+  nutrition: NutritionRecette;       // Calculée selon profil
 }
 ```
 
@@ -339,23 +348,52 @@ Vérifications:
 - Numérotation des étapes correcte
 ```
 
-### 🔄 Adaptation au Profil Utilisateur
+### 🔄 Adaptation au Profil Utilisateur (NOUVEAU SYSTÈME)
 
 ```typescript
-// Fonction: adapteRecipeToBMR(recipe, bmr_utilisateur, bmr_reference)
-// Fichier: /lib/recipe-generator.ts
+// Fonction: adapterRecetteAuProfil(template, profile)
+// Fichier: /lib/recipe-adaptation.ts
 
-Principe:
-- Ratio = bmr_utilisateur / bmr_reference (défaut: 1800)
-- Toutes les quantités d'ingrédients × ratio
-- Valeurs nutritionnelles × ratio
+Principe RÉVOLUTIONNAIRE:
+1. Charge les valeurs nutritionnelles CIQUAL pour 100g de chaque ingrédient
+2. Calcule les besoins du repas selon le profil:
+   - Protéines: poids × 3g/kg × % repas
+   - Lipides max: limite TG / 2 repas
+   - Fibres: 40g/jour × % repas
+3. Optimisation intelligente des quantités:
+   - Protéine principale calculée selon besoins
+   - Si lipides dépassent budget → RÉDUCTION + BLANC D'ŒUF
+   - Blanc d'œuf complète protéines SANS ajouter lipides
+   - Féculents, légumes ajustés pour fibres/glucides
+   - Lipides ajustés au budget restant
 
-Exemple:
-- BMR utilisateur: 2000 kcal
-- BMR référence: 1800 kcal
-- Ratio: 2000/1800 = 1.11
-- Poulet: 200g → 222g
-- Calories: 500 → 555 kcal
+Exemple (utilisateur 102kg, TG=14 → 5g lipides/repas):
+- Besoin protéines: 102 × 3 × 0.6 = 183.6g
+- Dinde (24g prot/100g, 1.21g lipides/100g):
+  → 765g nécessaire pour protéines
+  → 9.3g lipides → DÉPASSE le budget !
+- Solution intelligente:
+  → 500g dinde = 120g prot, 6g lipides ✓
+  → 63g blanc d'œuf = 63.6g prot, 0g lipides ✓
+  → TOTAL: 183.6g protéines, 6g lipides ✓
+```
+
+### 📊 Fonction calculerQuantitesIntelligentes()
+
+```typescript
+// Fichier: /lib/recipe-adaptation.ts
+
+Algorithme:
+1. Charger ingrédients CIQUAL
+2. Identifier protéine principale
+3. Calculer quantité brute pour objectif protéines
+4. Vérifier budget lipides:
+   - Si OK → quantité brute
+   - Si DÉPASSEMENT → réduire + ajouter blanc d'œuf
+5. Calculer féculents (fibres + glucides)
+6. Calculer légumes (vitamines + fibres)
+7. Calculer lipides (budget restant)
+8. Retourner quantités + nutrition totale
 ```
 
 ### 🔍 Recherche et Filtrage

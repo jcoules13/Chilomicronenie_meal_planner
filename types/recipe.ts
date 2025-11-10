@@ -44,13 +44,28 @@ export type DifficulteRecette = "facile" | "moyen" | "difficile";
 export type CoutEstime = "faible" | "moyen" | "eleve";
 
 /**
- * Ingrédient dans une recette
+ * Ingrédient dans une recette TEMPLATE (sans quantités fixes)
+ * Les quantités seront calculées dynamiquement selon le profil utilisateur
+ */
+export interface IngredientTemplate {
+  code_ciqual: string;  // Code CIQUAL pour récupérer les valeurs nutritionnelles
+  nom: string;
+  categorie: CategorieIngredient;
+  notes?: string;
+  optionnel?: boolean;
+  // Pour le calcul automatique
+  role?: "proteine_principale" | "proteine_complementaire" | "feculent" | "legume" | "lipide" | "autre";
+}
+
+/**
+ * Ingrédient dans une recette CALCULÉE (avec quantités adaptées au profil)
  */
 export interface IngredientRecette {
   nom: string;
   quantite: number;
   unite: string;
   categorie: CategorieIngredient;
+  code_ciqual?: string;  // Référence CIQUAL si disponible
   notes?: string;
   optionnel?: boolean;
 }
@@ -163,7 +178,57 @@ export interface ResultatAdaptation {
 }
 
 /**
- * Recette complète
+ * Template de recette (base 100g pour chaque ingrédient)
+ * Les quantités seront calculées dynamiquement selon le profil utilisateur
+ */
+export interface RecipeTemplate {
+  id: string;
+  titre: string;
+  type: TypeRecette;
+  repas_cible: RepasCible;
+  saison: Saison[];
+
+  // Temps
+  temps_preparation_min: number;
+  temps_cuisson_min: number;
+  temps_total_min: number;
+
+  // Ingrédients SANS quantités (juste codes CIQUAL)
+  ingredients_template: IngredientTemplate[];
+  etapes: EtapeRecette[];
+
+  // Besoins nutritionnels de référence (pour 1 repas type)
+  besoins_reference: {
+    proteines_g: number;  // Ex: 180g pour un utilisateur de 102kg
+    lipides_max_g: number;  // Ex: 5g pour TG=14
+    fibres_g: number;  // Ex: 20g
+    ig_moyen_max: number;  // Ex: 50
+  };
+
+  // Informations complémentaires
+  conseils?: string[];
+  variantes?: VarianteRecette[];
+  materiel_requis?: string[];
+  tags?: string[];
+
+  // Métadonnées
+  difficulte: DifficulteRecette;
+  cout_estime: CoutEstime;
+  stockage?: StockageRecette;
+
+  // Pour la base de données
+  date_creation?: string;
+  date_modification?: string;
+  auteur?: string;
+
+  // Statistiques d'utilisation
+  nb_utilisations?: number;
+  note_moyenne?: number;
+  favoris?: boolean;
+}
+
+/**
+ * Recette complète CALCULÉE (avec quantités adaptées au profil)
  */
 export interface Recipe {
   id: string;
@@ -178,11 +243,11 @@ export interface Recipe {
   temps_total_min: number;
   portions: number;
 
-  // Ingrédients et préparation
+  // Ingrédients et préparation (CALCULÉS)
   ingredients: IngredientRecette[];
   etapes: EtapeRecette[];
 
-  // Nutrition
+  // Nutrition (CALCULÉE)
   nutrition: NutritionRecette;
 
   // Système d'adaptation aux budgets lipides
