@@ -9,6 +9,7 @@ import { ALL_RECIPE_TEMPLATES } from "@/data/recipe-templates";
 import { Recipe } from "@/types/recipe";
 import { adapterRecetteAuProfil } from "@/lib/recipe-adaptation";
 import { useProfile } from "@/hooks/useProfile";
+import { importRecipeIngredients } from "@/lib/db/ciqual-import";
 import Link from "next/link";
 import {
   Clock,
@@ -55,6 +56,12 @@ export default function RecetteDetailPage({ params }: PageProps) {
       setIsLoading(true);
       setError(null);
       try {
+        // D'abord, importer les ingrédients nécessaires
+        console.log("Import des ingrédients CIQUAL nécessaires...");
+        const importResult = await importRecipeIngredients();
+        console.log("Import CIQUAL:", importResult);
+
+        // Ensuite, adapter la recette
         const adapted = await adapterRecetteAuProfil(template, profile);
         setRecetteAdaptee(adapted);
       } catch (err) {

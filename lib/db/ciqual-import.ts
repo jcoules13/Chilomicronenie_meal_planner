@@ -7,6 +7,7 @@ import { initDB } from "./indexedDB";
 import type { IngredientCiqual, Nutrition100g, Saison } from "@/types/ciqual";
 import { v4 as uuidv4 } from "uuid";
 import { CIQUAL_DATA_300 } from "./ciqual-data-300";
+import { RECIPE_INGREDIENTS_CIQUAL } from "@/data/recipe-ingredients-ciqual";
 
 // ============================================================================
 // SAMPLE DATA - Ingrédients CIQUAL de base pour démarrage
@@ -544,6 +545,71 @@ export async function clearAllCiqualIngredients(): Promise<{
     });
   } catch (error) {
     return { success: false, deleted: 0, error: String(error) };
+  }
+}
+
+/**
+ * Importe les ingrédients nécessaires pour les recettes templates
+ * Appelé automatiquement lors de l'accès aux recettes
+ */
+export async function importRecipeIngredients(): Promise<{
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: string[];
+}> {
+  try {
+    const db = await initDB();
+    let imported = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const ingredientData of RECIPE_INGREDIENTS_CIQUAL) {
+      // Vérifier si l'ingrédient existe déjà
+      const existing = await getIngredientByCodeCiqual(ingredientData.code_ciqual);
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      // Ajouter l'ingrédient
+      const ingredient: IngredientCiqual = {
+        ...ingredientData,
+        id: uuidv4(),
+        date_import: new Date().toISOString(),
+      };
+
+      try {
+        const transaction = db.transaction("ingredients_ciqual", "readwrite");
+        const store = transaction.objectStore("ingredients_ciqual");
+
+        await new Promise<void>((resolve, reject) => {
+          const request = store.add(ingredient);
+          request.onsuccess = () => {
+            imported++;
+            resolve();
+          };
+          request.onerror = () => reject(request.error);
+        });
+      } catch (error) {
+        errors.push(`Erreur import ${ingredientData.code_ciqual}: ${String(error)}`);
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      imported,
+      skipped,
+      errors,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      imported: 0,
+      skipped: 0,
+      errors: [String(error)],
+    };
   }
 }
 

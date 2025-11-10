@@ -69,13 +69,13 @@ export const TEMPLATE_DINDE_QUINOA: RecipeTemplate = {
     },
     {
       code_ciqual: "17270", // Huile MCT coco (pour cuisson dinde)
-      nom: "Huile MCT coco",
+      nom: "Huile de coco (MCT)",
       categorie: "lipide",
       role: "lipide",
       notes: "Pour la cuisson de la dinde - quantité adaptée au budget lipides",
     },
     {
-      code_ciqual: "17270", // Huile d'olive (pour salade)
+      code_ciqual: "17440", // Huile d'olive (pour salade)
       nom: "Huile d'olive",
       categorie: "lipide",
       role: "lipide",
