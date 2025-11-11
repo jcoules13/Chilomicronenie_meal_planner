@@ -516,32 +516,115 @@ export default function RecetteDetailPage({ params }: PageProps) {
                     <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                       Budget pour ce repas ({repas.nom})
                     </h3>
-                    <div className="p-3 bg-white/80 rounded border-2 border-blue-300">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Calories cibles</span>
-                          <span className="font-bold">{budgetCalories} kcal</span>
+                    <div className="space-y-3">
+                      {/* Calories */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600">Calories</span>
+                          <span className="font-bold">
+                            {recetteAdaptee ? `${recetteAdaptee.nutrition.calories} / ${budgetCalories} kcal` : `${budgetCalories} kcal`}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        {recetteAdaptee && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-2 rounded-full ${
+                                (recetteAdaptee.nutrition.calories / budgetCalories) * 100 > 110 ? "bg-red-500" :
+                                (recetteAdaptee.nutrition.calories / budgetCalories) * 100 > 100 ? "bg-orange-500" :
+                                "bg-green-500"
+                              }`}
+                              style={{ width: `${Math.min((recetteAdaptee.nutrition.calories / budgetCalories) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Protéines */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
                           <span className="text-gray-600">Protéines</span>
-                          <span className="font-bold text-blue-600">{budgetProteines}g</span>
+                          <span className="font-bold text-blue-600">
+                            {recetteAdaptee ? `${recetteAdaptee.nutrition.proteines_g}g / ${budgetProteines}g` : `${budgetProteines}g`}
+                            {recetteAdaptee && ` (${Math.round((recetteAdaptee.nutrition.proteines_g / budgetProteines) * 100)}%)`}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        {recetteAdaptee && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: `${Math.min((recetteAdaptee.nutrition.proteines_g / budgetProteines) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lipides */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
                           <span className="text-gray-600">Lipides max</span>
-                          <span className="font-bold text-yellow-600">{budgetLipides}g</span>
+                          <span className="font-bold text-yellow-600">
+                            {recetteAdaptee ? `${recetteAdaptee.nutrition.lipides_g}g / ${budgetLipides}g` : `${budgetLipides}g`}
+                            {recetteAdaptee && ` (${Math.round((recetteAdaptee.nutrition.lipides_g / budgetLipides) * 100)}%)`}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        {recetteAdaptee && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-2 rounded-full ${
+                                (recetteAdaptee.nutrition.lipides_g / budgetLipides) * 100 > 100 ? "bg-red-500" :
+                                (recetteAdaptee.nutrition.lipides_g / budgetLipides) * 100 > 90 ? "bg-orange-500" :
+                                "bg-yellow-500"
+                              }`}
+                              style={{ width: `${Math.min((recetteAdaptee.nutrition.lipides_g / budgetLipides) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Glucides */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
                           <span className="text-gray-600">Glucides</span>
-                          <span className="font-bold text-green-600">{budgetGlucides}g</span>
+                          <span className="font-bold text-green-600">
+                            {recetteAdaptee ? `${recetteAdaptee.nutrition.glucides_g}g / ${budgetGlucides}g` : `${budgetGlucides}g`}
+                            {recetteAdaptee && ` (${Math.round((recetteAdaptee.nutrition.glucides_g / budgetGlucides) * 100)}%)`}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        {recetteAdaptee && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{ width: `${Math.min((recetteAdaptee.nutrition.glucides_g / budgetGlucides) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Fibres */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
                           <span className="text-gray-600">Fibres min</span>
-                          <span className="font-bold text-purple-600">{budgetFibres}g</span>
+                          <span className="font-bold text-purple-600">
+                            {recetteAdaptee ? `${recetteAdaptee.nutrition.fibres_g}g / ${budgetFibres}g` : `${budgetFibres}g`}
+                            {recetteAdaptee && ` (${Math.round((recetteAdaptee.nutrition.fibres_g / budgetFibres) * 100)}%)`}
+                          </span>
                         </div>
+                        {recetteAdaptee && (
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-2 rounded-full ${
+                                (recetteAdaptee.nutrition.fibres_g / budgetFibres) * 100 >= 100 ? "bg-purple-500" :
+                                (recetteAdaptee.nutrition.fibres_g / budgetFibres) * 100 >= 50 ? "bg-purple-400" :
+                                "bg-purple-300"
+                              }`}
+                              style={{ width: `${Math.min((recetteAdaptee.nutrition.fibres_g / budgetFibres) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     {recetteAdaptee && (
-                      <div className="p-2 bg-green-50 border border-green-200 rounded text-xs">
+                      <div className="p-2 bg-green-50 border border-green-200 rounded text-xs mt-2">
                         <p className="text-green-800 font-medium">
                           ✓ Cette recette est calculée pour respecter ces budgets
                         </p>

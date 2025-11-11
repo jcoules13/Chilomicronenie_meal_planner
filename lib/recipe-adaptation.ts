@@ -161,10 +161,16 @@ export async function calculerQuantitesIntelligentes(
 
   // Ajouter le blanc d'œuf si nécessaire
   if (quantite_blanc_oeuf_g > 0) {
-    // Code CIQUAL du blanc d'œuf : 22000 (à vérifier dans la base)
+    // Code CIQUAL du blanc d'œuf : 22000
+    // 1 blanc d'œuf = environ 33g
+    const nombre_oeufs = Math.round(quantite_blanc_oeuf_g / 33);
+    const nom_affichage = nombre_oeufs === 1
+      ? `Blanc d'œuf (${Math.round(quantite_blanc_oeuf_g)}g, soit ${nombre_oeufs} œuf)`
+      : `Blancs d'œufs (${Math.round(quantite_blanc_oeuf_g)}g, soit ${nombre_oeufs} œufs)`;
+
     ingredients_calcules.push({
       code_ciqual: "22000",
-      nom: "Blanc d'œuf liquide",
+      nom: nom_affichage,
       quantite_g: Math.round(quantite_blanc_oeuf_g),
       nutrition: {
         calories: Math.round(quantite_blanc_oeuf_g * 0.52),
@@ -181,6 +187,7 @@ export async function calculerQuantitesIntelligentes(
 
   for (const ing of template.ingredients_template) {
     if (ing.role === "proteine_principale") continue; // Déjà traité
+    if (ing.role === "proteine_complementaire") continue; // Blanc d'œuf déjà ajouté automatiquement si nécessaire
 
     const ciqual = ingredients_ciqual.get(ing.code_ciqual);
     if (!ciqual) continue;
@@ -218,7 +225,7 @@ export async function calculerQuantitesIntelligentes(
   }
 
   // Calculer les totaux
-  const totaux = {
+  let totaux_bruts = {
     calories: 0,
     proteines_g: 0,
     lipides_g: 0,
@@ -227,12 +234,21 @@ export async function calculerQuantitesIntelligentes(
   };
 
   for (const ing of ingredients_calcules) {
-    totaux.calories += ing.nutrition.calories;
-    totaux.proteines_g += ing.nutrition.proteines_g;
-    totaux.lipides_g += ing.nutrition.lipides_g;
-    totaux.glucides_g += ing.nutrition.glucides_g;
-    totaux.fibres_g += ing.nutrition.fibres_g;
+    totaux_bruts.calories += ing.nutrition.calories;
+    totaux_bruts.proteines_g += ing.nutrition.proteines_g;
+    totaux_bruts.lipides_g += ing.nutrition.lipides_g;
+    totaux_bruts.glucides_g += ing.nutrition.glucides_g;
+    totaux_bruts.fibres_g += ing.nutrition.fibres_g;
   }
+
+  // Arrondir les totaux à 1 décimale
+  const totaux = {
+    calories: Math.round(totaux_bruts.calories),
+    proteines_g: Math.round(totaux_bruts.proteines_g * 10) / 10,
+    lipides_g: Math.round(totaux_bruts.lipides_g * 10) / 10,
+    glucides_g: Math.round(totaux_bruts.glucides_g * 10) / 10,
+    fibres_g: Math.round(totaux_bruts.fibres_g * 10) / 10,
+  };
 
   // Vérifier le respect des contraintes
   const respect_contraintes = {
