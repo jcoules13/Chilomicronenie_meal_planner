@@ -2,61 +2,61 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { IngredientFilters as Filters } from "@/hooks/useIngredients";
+import { RecipeFilters as Filters } from "@/types/recipe";
 import { X } from "lucide-react";
 
-interface IngredientFiltersProps {
+interface RecipeFiltersProps {
   filters: Filters;
   onChange: (filters: Filters) => void;
   totalCount: number;
   filteredCount: number;
 }
 
-const GROUPES = [
-  { key: "Féculents", label: "Féculents", emoji: "🌾" },
-  { key: "Viandes", label: "Viandes", emoji: "🥩" },
-  { key: "Poissons", label: "Poissons", emoji: "🐟" },
-  { key: "Légumes", label: "Légumes", emoji: "🥦" },
-  { key: "Légumineuses", label: "Légumineuses", emoji: "🫘" },
-  { key: "Fruits", label: "Fruits", emoji: "🍎" },
-  { key: "Produits laitiers", label: "Produits laitiers", emoji: "🥛" },
-  { key: "Noix et graines", label: "Noix et graines", emoji: "🌰" },
-  { key: "Huiles et matières grasses", label: "Huiles et matières grasses", emoji: "🫒" },
-  { key: "Aromates", label: "Aromates", emoji: "🌿" },
-  { key: "Condiments", label: "Condiments", emoji: "🧂" },
+const TYPE_RECETTE = [
+  { key: "plat_principal", label: "Plat principal", emoji: "🍽️" },
+  { key: "entree", label: "Entrée", emoji: "🥗" },
+  { key: "soupe", label: "Soupe", emoji: "🍲" },
+  { key: "dessert", label: "Dessert", emoji: "🍰" },
 ];
 
-const COMPATIBILITES = [
-  { key: "EXCELLENT", label: "EXCELLENT", emoji: "🟢" },
-  { key: "BON", label: "BON", emoji: "🔵" },
-  { key: "MODERE", label: "MODÉRÉ", emoji: "🟡" },
-  { key: "DECONSEILLE", label: "DÉCONSEILLÉ", emoji: "🔴" },
-] as const;
-
-const INDEX_GLYCEMIQUE = [
-  { key: "BAS", label: "Bas (<55)", emoji: "🟢" },
-  { key: "MOYEN", label: "Moyen (55-69)", emoji: "🟡" },
-  { key: "ELEVE", label: "Élevé (≥70)", emoji: "🔴" },
+const REPAS_CIBLE = [
+  { key: "REPAS_1", label: "Repas 1 (11h)", emoji: "🌞" },
+  { key: "REPAS_2", label: "Repas 2 (17h)", emoji: "🌙" },
+  { key: "LES_DEUX", label: "Les deux", emoji: "⏰" },
 ];
 
-const LIPIDES = [
-  { key: "TRES_BAS", label: "Très bas (<2g)", emoji: "💚" },
-  { key: "BAS", label: "Bas (2-5g)", emoji: "💙" },
-  { key: "MODERE", label: "Modéré (5-10g)", emoji: "💛" },
-  { key: "ELEVE", label: "Élevé (≥10g)", emoji: "❤️" },
+const DIFFICULTE = [
+  { key: "facile", label: "Facile", emoji: "🟢" },
+  { key: "moyen", label: "Moyen", emoji: "🟡" },
+  { key: "difficile", label: "Difficile", emoji: "🔴" },
 ];
 
-export function IngredientFilters({
+const SAISONS = [
+  { key: "printemps", label: "Printemps", emoji: "🌸" },
+  { key: "ete", label: "Été", emoji: "☀️" },
+  { key: "automne", label: "Automne", emoji: "🍂" },
+  { key: "hiver", label: "Hiver", emoji: "❄️" },
+];
+
+const TEMPS_PREPARATION = [
+  { key: 15, label: "≤15 min (Express)", emoji: "⚡" },
+  { key: 30, label: "≤30 min (Rapide)", emoji: "🏃" },
+  { key: 45, label: "≤45 min (Moyen)", emoji: "⏱️" },
+  { key: 60, label: "≤60 min (Long)", emoji: "🕐" },
+];
+
+export function RecipeFilters({
   filters,
   onChange,
   totalCount,
   filteredCount,
-}: IngredientFiltersProps) {
+}: RecipeFiltersProps) {
   const hasActiveFilters =
-    filters.groupe ||
-    filters.compatibilite ||
-    filters.indexGlycemique ||
-    filters.lipides;
+    filters.type ||
+    filters.repas_cible ||
+    filters.difficulte ||
+    filters.saison ||
+    filters.temps_max_min !== undefined;
 
   const resetFilters = () => {
     onChange({});
@@ -70,7 +70,7 @@ export function IngredientFilters({
           <div className="text-center">
             <div className="text-3xl font-bold">{filteredCount}</div>
             <div className="text-sm text-muted-foreground">
-              sur {totalCount} ingrédient(s)
+              sur {totalCount} recette(s)
             </div>
           </div>
           {hasActiveFilters && (
@@ -87,23 +87,23 @@ export function IngredientFilters({
         </CardContent>
       </Card>
 
-      {/* Groupe */}
+      {/* Type de recette */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Groupe</CardTitle>
+          <CardTitle className="text-sm">Type de recette</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {GROUPES.map(({ key, label, emoji }) => (
+          {TYPE_RECETTE.map(({ key, label, emoji }) => (
             <button
               key={key}
               onClick={() =>
                 onChange({
                   ...filters,
-                  groupe: filters.groupe === key ? undefined : key,
+                  type: filters.type === key ? undefined : (key as any),
                 })
               }
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
-                filters.groupe === key
+                filters.type === key
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent"
               }`}
@@ -115,24 +115,23 @@ export function IngredientFilters({
         </CardContent>
       </Card>
 
-      {/* Compatibilité Chylomicronémie */}
+      {/* Repas cible */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Compatibilité</CardTitle>
+          <CardTitle className="text-sm">Repas cible</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {COMPATIBILITES.map(({ key, label, emoji }) => (
+          {REPAS_CIBLE.map(({ key, label, emoji }) => (
             <button
               key={key}
               onClick={() =>
                 onChange({
                   ...filters,
-                  compatibilite:
-                    filters.compatibilite === key ? undefined : key,
+                  repas_cible: filters.repas_cible === key ? undefined : (key as any),
                 })
               }
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
-                filters.compatibilite === key
+                filters.repas_cible === key
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent"
               }`}
@@ -144,26 +143,23 @@ export function IngredientFilters({
         </CardContent>
       </Card>
 
-      {/* Index Glycémique */}
+      {/* Difficulté */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Index Glycémique</CardTitle>
+          <CardTitle className="text-sm">Difficulté</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {INDEX_GLYCEMIQUE.map(({ key, label, emoji }) => (
+          {DIFFICULTE.map(({ key, label, emoji }) => (
             <button
               key={key}
               onClick={() =>
                 onChange({
                   ...filters,
-                  indexGlycemique:
-                    filters.indexGlycemique === key
-                      ? undefined
-                      : (key as "BAS" | "MOYEN" | "ELEVE"),
+                  difficulte: filters.difficulte === key ? undefined : (key as any),
                 })
               }
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
-                filters.indexGlycemique === key
+                filters.difficulte === key
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent"
               }`}
@@ -175,26 +171,51 @@ export function IngredientFilters({
         </CardContent>
       </Card>
 
-      {/* Lipides */}
+      {/* Saison */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Lipides (pour 100g)</CardTitle>
+          <CardTitle className="text-sm">Saison</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {LIPIDES.map(({ key, label, emoji }) => (
+          {SAISONS.map(({ key, label, emoji }) => (
             <button
               key={key}
               onClick={() =>
                 onChange({
                   ...filters,
-                  lipides:
-                    filters.lipides === key
-                      ? undefined
-                      : (key as "TRES_BAS" | "BAS" | "MODERE" | "ELEVE"),
+                  saison: filters.saison === key ? undefined : (key as any),
                 })
               }
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
-                filters.lipides === key
+                filters.saison === key
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-accent"
+              }`}
+            >
+              <span>{emoji}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Temps de préparation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Temps de préparation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {TEMPS_PREPARATION.map(({ key, label, emoji }) => (
+            <button
+              key={key}
+              onClick={() =>
+                onChange({
+                  ...filters,
+                  temps_max_min: filters.temps_max_min === key ? undefined : key,
+                })
+              }
+              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
+                filters.temps_max_min === key
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent"
               }`}

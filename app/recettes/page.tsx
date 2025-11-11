@@ -6,28 +6,25 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RecipeFilters as RecipeFiltersComponent } from "@/components/recettes/RecipeFilters";
 import { ALL_RECIPE_TEMPLATES } from "@/data/recipe-templates";
-import { RecipeTemplate, RecipeFilters, TypeRecette, RepasCible, DifficulteRecette } from "@/types/recipe";
-import { Saison } from "@/types/aliment";
+import { RecipeTemplate, RecipeFilters } from "@/types/recipe";
 import { useProfile } from "@/hooks/useProfile";
 import Link from "next/link";
 import {
   Clock,
   ChefHat,
-  Flame,
   Search,
-  Filter,
   Heart,
-  Star,
-  TrendingUp,
   AlertCircle,
+  TrendingUp,
+  Droplet,
+  Wheat,
 } from "lucide-react";
 
 export default function RecettesPage() {
   const [searchText, setSearchText] = useState("");
   const [filters, setFilters] = useState<RecipeFilters>({});
-  const [showFilters, setShowFilters] = useState(false);
 
   // Charger le profil utilisateur
   const { profile } = useProfile();
@@ -37,7 +34,13 @@ export default function RecettesPage() {
     if (!profile?.valeurs_calculees?.macros_quotidiens?.lipides_g) {
       return null;
     }
-    // Budget quotidien divisé par 2 (2 repas par jour)
+    // Calculer selon la répartition des repas
+    if (profile.repas.length >= 2) {
+      // Prendre le plus petit pourcentage (cas le plus strict)
+      const pourcentages = profile.repas.map(r => r.pourcentage_calories / 100);
+      return profile.valeurs_calculees.macros_quotidiens.lipides_g * Math.min(...pourcentages);
+    }
+    // Par défaut, diviser par 2
     return profile.valeurs_calculees.macros_quotidiens.lipides_g / 2;
   }, [profile]);
 
@@ -81,180 +84,124 @@ export default function RecettesPage() {
 
   return (
     <MainLayout title="Recettes">
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Recettes</h1>
-          <p className="text-gray-600 mt-2">
-            {total} recette{total > 1 ? "s" : ""} adaptée{total > 1 ? "s" : ""} à la chilomicronémie
-          </p>
-          {budgetLipidesParRepas && (
-            <p className="text-sm text-blue-600 mt-1">
-              Budget actuel: {budgetLipidesParRepas.toFixed(1)}g de lipides par repas
-            </p>
+      <div className="flex gap-6">
+        {/* Sidebar Filtres */}
+        <aside className="w-64 flex-shrink-0 space-y-4">
+          <RecipeFiltersComponent
+            filters={filters}
+            onChange={setFilters}
+            totalCount={ALL_RECIPE_TEMPLATES.length}
+            filteredCount={total}
+          />
+        </aside>
+
+        {/* Contenu Principal */}
+        <div className="flex-1 space-y-6">
+          {/* Header */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <h1 className="text-3xl font-bold">Recettes</h1>
+              <p className="text-gray-600 mt-2">
+                {total} recette{total > 1 ? "s" : ""} adaptée{total > 1 ? "s" : ""} à la chilomicronémie
+              </p>
+              {budgetLipidesParRepas && (
+                <p className="text-sm text-blue-600 mt-1">
+                  Budget actuel: {budgetLipidesParRepas.toFixed(1)}g de lipides par repas
+                </p>
+              )}
+            </div>
+
+            {/* Carte besoins utilisateur */}
+            {profile?.valeurs_calculees && (
+              <Card className="p-4 bg-gradient-to-br from-blue-50 to-purple-50">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Vos besoins quotidiens
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Calories</span>
+                    <span className="font-bold">{profile.valeurs_calculees.besoins_energetiques_kcal} kcal</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3 text-blue-600" />
+                      <span className="text-gray-600">Protéines</span>
+                    </div>
+                    <span className="font-bold text-blue-600">{profile.valeurs_calculees.macros_quotidiens.proteines_g}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-1">
+                      <Droplet className="w-3 h-3 text-yellow-600" />
+                      <span className="text-gray-600">Lipides</span>
+                    </div>
+                    <span className="font-bold text-yellow-600">{profile.valeurs_calculees.macros_quotidiens.lipides_g}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-1">
+                      <Wheat className="w-3 h-3 text-green-600" />
+                      <span className="text-gray-600">Glucides</span>
+                    </div>
+                    <span className="font-bold text-green-600">{profile.valeurs_calculees.macros_quotidiens.glucides_g}g</span>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* Alerte si pas de profil */}
+          {!budgetLipidesParRepas && (
+            <Card className="p-4 bg-yellow-50 border-yellow-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-900">Profil non configuré</h3>
+                  <p className="text-sm text-yellow-800 mt-1">
+                    Configurez votre profil avec votre taux de triglycérides pour voir les recettes adaptées à votre budget lipides.
+                  </p>
+                  <Link href="/profil">
+                    <Button variant="outline" size="sm" className="mt-3">
+                      Configurer mon profil
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Barre de recherche */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Rechercher une recette, un ingrédient..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Liste des recettes templates */}
+          {filteredTemplates.length === 0 ? (
+            <Card className="p-12 text-center">
+              <ChefHat className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Aucune recette trouvée</h3>
+              <p className="text-gray-600">
+                Essayez de modifier vos critères de recherche ou vos filtres.
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+              {filteredTemplates.map((template) => (
+                <RecipeTemplateCard
+                  key={template.id}
+                  template={template}
+                  budgetLipidesParRepas={budgetLipidesParRepas}
+                />
+              ))}
+            </div>
           )}
         </div>
-        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-          <Filter className="w-4 h-4 mr-2" />
-          Filtres
-        </Button>
       </div>
-
-      {/* Alerte si pas de profil */}
-      {!budgetLipidesParRepas && (
-        <Card className="p-4 bg-yellow-50 border-yellow-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-yellow-900">Profil non configuré</h3>
-              <p className="text-sm text-yellow-800 mt-1">
-                Configurez votre profil avec votre taux de triglycérides pour voir les recettes adaptées à votre budget lipides.
-              </p>
-              <Link href="/profil">
-                <Button variant="outline" size="sm" className="mt-3">
-                  Configurer mon profil
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Barre de recherche */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <Input
-          type="text"
-          placeholder="Rechercher une recette, un ingrédient..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Filtres avancés */}
-      {showFilters && (
-        <Card className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Type de recette</label>
-              <Select
-                value={filters.type || "tous"}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, type: value === "tous" ? undefined : (value as TypeRecette) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tous">Tous</SelectItem>
-                  <SelectItem value="plat_principal">Plat principal</SelectItem>
-                  <SelectItem value="entree">Entrée</SelectItem>
-                  <SelectItem value="soupe">Soupe</SelectItem>
-                  <SelectItem value="dessert">Dessert</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Repas</label>
-              <Select
-                value={filters.repas_cible || "tous"}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, repas_cible: value === "tous" ? undefined : (value as RepasCible) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tous" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tous">Tous</SelectItem>
-                  <SelectItem value="REPAS_1">Repas 1 (11h)</SelectItem>
-                  <SelectItem value="REPAS_2">Repas 2 (17h)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Difficulté</label>
-              <Select
-                value={filters.difficulte || "tous"}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, difficulte: value === "tous" ? undefined : (value as DifficulteRecette) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tous">Toutes</SelectItem>
-                  <SelectItem value="facile">Facile</SelectItem>
-                  <SelectItem value="moyen">Moyen</SelectItem>
-                  <SelectItem value="difficile">Difficile</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Saison</label>
-              <Select
-                value={filters.saison || "tous"}
-                onValueChange={(value) =>
-                  setFilters({ ...filters, saison: value === "tous" ? undefined : (value as Saison) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tous">Toutes</SelectItem>
-                  <SelectItem value="printemps">Printemps</SelectItem>
-                  <SelectItem value="ete">Été</SelectItem>
-                  <SelectItem value="automne">Automne</SelectItem>
-                  <SelectItem value="hiver">Hiver</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setFilters({});
-                setSearchText("");
-              }}
-            >
-              Réinitialiser
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {/* Liste des recettes templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTemplates.map((template) => (
-          <RecipeTemplateCard
-            key={template.id}
-            template={template}
-            budgetLipidesParRepas={budgetLipidesParRepas}
-          />
-        ))}
-      </div>
-
-      {/* Aucun résultat */}
-      {filteredTemplates.length === 0 && (
-        <Card className="p-12 text-center">
-          <ChefHat className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Aucune recette trouvée</h3>
-          <p className="text-gray-600">
-            Essayez de modifier vos critères de recherche ou vos filtres.
-          </p>
-        </Card>
-      )}
-    </div>
     </MainLayout>
   );
 }
