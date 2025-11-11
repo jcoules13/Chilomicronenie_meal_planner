@@ -239,20 +239,60 @@ export default function RecetteDetailPage({ params }: PageProps) {
             <div className="space-y-3">
               {recetteAdaptee ? (
                 // Ingrédients avec quantités calculées
-                recetteAdaptee.ingredients.map((ingredient, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="font-medium">{ingredient.nom}</span>
+                recetteAdaptee.ingredients.map((ingredient, index) => {
+                  // Déterminer si c'est un féculent et extraire les infos cru/cuit des notes
+                  const isFeculent = ["Quinoa", "Lentilles", "Riz", "Pâtes"].some(f =>
+                    ingredient.nom.toLowerCase().includes(f.toLowerCase())
+                  );
+
+                  let displayText = `${ingredient.quantite}g`;
+                  let hasNote = false;
+
+                  // Si féculent, afficher le poids cuit estimé
+                  if (isFeculent) {
+                    // Ratios d'absorption pour cuisson
+                    const ratios: Record<string, number> = {
+                      quinoa: 3,      // 1g sec → 3g cuit
+                      lentilles: 2.5,  // 1g sec → 2.5g cuit
+                      riz: 3,          // 1g sec → 3g cuit
+                      pâtes: 2.5       // 1g sec → 2.5g cuit
+                    };
+
+                    const nomLower = ingredient.nom.toLowerCase();
+                    for (const [type, ratio] of Object.entries(ratios)) {
+                      if (nomLower.includes(type)) {
+                        const poidsCuit = Math.round(ingredient.quantite * ratio);
+                        displayText = `${ingredient.quantite}g cru (~${poidsCuit}g cuit)`;
+                        hasNote = true;
+                        break;
+                      }
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={index}
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          <span className="font-medium">{ingredient.nom}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-gray-700 font-semibold">
+                            {displayText}
+                          </span>
+                        </div>
+                      </div>
+                      {hasNote && (
+                        <p className="text-xs text-gray-500 mt-1 ml-5">
+                          💡 Pesez à sec avant cuisson
+                        </p>
+                      )}
                     </div>
-                    <span className="text-gray-700 font-semibold">
-                      {ingredient.quantite}g
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 // Template sans quantités
                 template.ingredients_template.map((ingredient, index) => (

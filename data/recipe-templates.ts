@@ -4,6 +4,7 @@
  */
 
 import type { RecipeTemplate } from "@/types/recipe";
+import { IMPORTED_RECIPE_TEMPLATES } from "./recipe-templates-imported";
 
 /**
  * EXEMPLE : Dinde Poêlée au Quinoa et Poivrons Grillés
@@ -269,8 +270,10 @@ export const TEMPLATE_POULET_LENTILLES: RecipeTemplate = {
 
 /**
  * Tous les templates disponibles
+ * Inclut les templates manuels et ceux importés automatiquement depuis /menu
  */
 export const ALL_RECIPE_TEMPLATES: RecipeTemplate[] = [
   TEMPLATE_DINDE_QUINOA,
   TEMPLATE_POULET_LENTILLES,
+  ...IMPORTED_RECIPE_TEMPLATES,
 ];
