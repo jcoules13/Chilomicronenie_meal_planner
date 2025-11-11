@@ -140,6 +140,20 @@ export interface ContraintesSante {
 }
 
 /**
+ * Préférences nutritionnelles personnalisées
+ */
+export interface PreferencesNutritionnelles {
+  // Protéines (prise de masse uniquement)
+  ratio_proteines_prise_masse?: 2.0 | 2.5 | 3.0; // g/kg (défaut: 2.0)
+
+  // Fibres
+  objectif_fibres_g_jour?: 30 | 40 | 50; // Objectif quotidien en fibres (défaut: 30)
+
+  // Index glycémique
+  ig_cible_max?: number; // IG maximum ciblé (défaut: 55 si diabète, sinon pas de limite)
+}
+
+/**
  * Profil utilisateur complet
  */
 export interface UserProfile {
@@ -160,6 +174,9 @@ export interface UserProfile {
 
   // Contraintes santé
   contraintes_sante: ContraintesSante;
+
+  // Préférences nutritionnelles
+  preferences_nutritionnelles?: PreferencesNutritionnelles;
 
   // Suivi des triglycérides (chylomicronémie)
   niveau_tg_g_l?: number; // Niveau actuel de TG en g/L

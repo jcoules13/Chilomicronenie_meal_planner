@@ -5,6 +5,7 @@ import {
   NiveauActivite,
   ObjectifSante,
   ZoneTG,
+  PreferencesNutritionnelles,
   COEFFICIENTS_ACTIVITE,
   CATEGORIES_IMC,
   ZONES_TG,
@@ -217,7 +218,8 @@ export function calculerMacros(
   age: number,
   objectif: ObjectifSante,
   avec_chylomicronemie: boolean = false,
-  limite_lipides_max_g?: number
+  limite_lipides_max_g?: number,
+  preferences?: PreferencesNutritionnelles
 ): { proteines_g: number; lipides_g: number; glucides_g: number } {
   if (avec_chylomicronemie && limite_lipides_max_g !== undefined) {
     // IMPORTANT : Pour chylomicronémie, la limite en GRAMMES est prioritaire
@@ -235,7 +237,8 @@ export function calculerMacros(
         proteines_g_par_kg = 1.6; // Maintien de la masse musculaire
         break;
       case "PRISE_MASSE":
-        proteines_g_par_kg = 2.0; // Croissance musculaire optimale
+        // Utiliser le ratio personnalisé si défini, sinon 2.0 par défaut
+        proteines_g_par_kg = preferences?.ratio_proteines_prise_masse || 2.0;
         break;
       default:
         proteines_g_par_kg = 1.6;
@@ -402,7 +405,8 @@ export function calculerValeursProfile(
     age,
     profile.objectif,
     profile.contraintes_sante.chylomicronemie,
-    limite_lipides_finale
+    limite_lipides_finale,
+    profile.preferences_nutritionnelles
   );
 
   return {

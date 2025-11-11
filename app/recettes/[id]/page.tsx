@@ -410,6 +410,169 @@ export default function RecetteDetailPage({ params }: PageProps) {
             )}
           </Card>
 
+          {/* Profil nutritionnel utilisateur */}
+          {profile && profile.valeurs_calculees && (
+            <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                Votre profil nutritionnel
+              </h2>
+
+              {/* Macros quotidiens */}
+              <div className="space-y-3 mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  Besoins quotidiens
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 bg-white/80 rounded">
+                    <p className="text-xs text-gray-600">Calories</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {profile.valeurs_calculees.besoins_energetiques_kcal} kcal
+                    </p>
+                  </div>
+                  <div className="p-2 bg-white/80 rounded">
+                    <p className="text-xs text-gray-600">Protéines</p>
+                    <p className="text-lg font-bold text-blue-600">
+                      {profile.valeurs_calculees.macros_quotidiens.proteines_g}g
+                    </p>
+                  </div>
+                  <div className="p-2 bg-white/80 rounded">
+                    <p className="text-xs text-gray-600">Lipides</p>
+                    <p className="text-lg font-bold text-yellow-600">
+                      {profile.valeurs_calculees.macros_quotidiens.lipides_g}g
+                    </p>
+                  </div>
+                  <div className="p-2 bg-white/80 rounded">
+                    <p className="text-xs text-gray-600">Glucides</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {profile.valeurs_calculees.macros_quotidiens.glucides_g}g
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Répartition des repas */}
+              <div className="space-y-3 mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  Répartition des repas
+                </h3>
+                <div className="p-3 bg-white/80 rounded">
+                  {profile.nombre_repas === 2 ? (
+                    <>
+                      <div className="flex justify-between items-center mb-2">
+                        {profile.repas.map((repas, idx) => (
+                          <div key={repas.id} className="text-center">
+                            <p className="text-sm font-medium text-gray-700">{repas.nom}</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                              {repas.pourcentage_calories}%
+                            </p>
+                            <p className="text-xs text-gray-500">{repas.horaire}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden flex">
+                        {profile.repas.map((repas, idx) => (
+                          <div
+                            key={repas.id}
+                            className={idx === 0 ? "bg-blue-500" : "bg-purple-500"}
+                            style={{ width: `${repas.pourcentage_calories}%` }}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-1">
+                      {profile.repas.map((repas) => (
+                        <div key={repas.id} className="flex justify-between text-sm">
+                          <span className="font-medium">{repas.nom} ({repas.horaire})</span>
+                          <span className="font-bold text-blue-600">{repas.pourcentage_calories}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Budget pour ce repas */}
+              {(() => {
+                // Déterminer pour quel repas cette recette est prévue
+                const repasCible = template.repas_cible === "LES_DEUX" ? "REPAS_1" : template.repas_cible;
+                const repas = profile.repas.find(r =>
+                  (repasCible === "REPAS_1" && r.nom === "Déjeuner") ||
+                  (repasCible === "REPAS_2" && r.nom === "Dîner")
+                );
+
+                if (!repas) return null;
+
+                const pourcentage = repas.pourcentage_calories / 100;
+                const budgetCalories = Math.round(profile.valeurs_calculees!.besoins_energetiques_kcal * pourcentage);
+                const budgetProteines = Math.round(profile.valeurs_calculees!.macros_quotidiens.proteines_g * pourcentage * 10) / 10;
+                const budgetLipides = Math.round(profile.valeurs_calculees!.macros_quotidiens.lipides_g * pourcentage * 10) / 10;
+                const budgetGlucides = Math.round(profile.valeurs_calculees!.macros_quotidiens.glucides_g * pourcentage * 10) / 10;
+                const budgetFibres = Math.round((profile.preferences_nutritionnelles?.objectif_fibres_g_jour || 30) * pourcentage * 10) / 10;
+
+                return (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      Budget pour ce repas ({repas.nom})
+                    </h3>
+                    <div className="p-3 bg-white/80 rounded border-2 border-blue-300">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Calories cibles</span>
+                          <span className="font-bold">{budgetCalories} kcal</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Protéines</span>
+                          <span className="font-bold text-blue-600">{budgetProteines}g</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Lipides max</span>
+                          <span className="font-bold text-yellow-600">{budgetLipides}g</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Glucides</span>
+                          <span className="font-bold text-green-600">{budgetGlucides}g</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Fibres min</span>
+                          <span className="font-bold text-purple-600">{budgetFibres}g</span>
+                        </div>
+                      </div>
+                    </div>
+                    {recetteAdaptee && (
+                      <div className="p-2 bg-green-50 border border-green-200 rounded text-xs">
+                        <p className="text-green-800 font-medium">
+                          ✓ Cette recette est calculée pour respecter ces budgets
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Préférences nutritionnelles */}
+              {profile.preferences_nutritionnelles && (
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                    Vos préférences
+                  </h3>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    {profile.objectif === "PRISE_MASSE" && profile.preferences_nutritionnelles.ratio_proteines_prise_masse && (
+                      <p>• Protéines : {profile.preferences_nutritionnelles.ratio_proteines_prise_masse} g/kg</p>
+                    )}
+                    {profile.preferences_nutritionnelles.objectif_fibres_g_jour && (
+                      <p>• Fibres : {profile.preferences_nutritionnelles.objectif_fibres_g_jour}g/jour</p>
+                    )}
+                    {profile.preferences_nutritionnelles.ig_cible_max && (
+                      <p>• IG cible max : {profile.preferences_nutritionnelles.ig_cible_max}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Conservation */}
           {template.stockage && (
             <Card className="p-6">

@@ -71,13 +71,19 @@ export function calculerBesoinsRepas(
   // Calculer les besoins pour ce repas
   const proteines_totales = profile.valeurs_calculees.macros_quotidiens.proteines_g;
   const lipides_max_total = profile.valeurs_calculees.macros_quotidiens.lipides_g;
-  const fibres_totales = 40; // Objectif standard
+
+  // Fibres : utiliser la préférence utilisateur ou 30g par défaut
+  const fibres_totales = profile.preferences_nutritionnelles?.objectif_fibres_g_jour || 30;
+
+  // IG cible : diabète ou préférence utilisateur
+  const ig_cible = profile.preferences_nutritionnelles?.ig_cible_max ||
+                   (profile.contraintes_sante?.diabete ? 55 : 70);
 
   return {
     proteines_g: proteines_totales * pourcentage,
-    lipides_max_g: lipides_max_total / 2, // Réparti sur 2 repas
+    lipides_max_g: lipides_max_total * pourcentage, // ✅ CORRECTION : répartition selon % repas
     fibres_g: fibres_totales * pourcentage,
-    ig_moyen_max: 50,
+    ig_moyen_max: ig_cible,
     calories_cible: profile.valeurs_calculees.besoins_energetiques_kcal * pourcentage,
   };
 }

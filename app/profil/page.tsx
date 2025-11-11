@@ -440,6 +440,163 @@ export default function ProfilPage() {
           </CardContent>
         </Card>
 
+        {/* Préférences nutritionnelles */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Utensils className="h-5 w-5" />
+              Préférences nutritionnelles
+            </CardTitle>
+            <CardDescription>
+              Personnalisez vos objectifs nutritionnels selon vos besoins
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Protéines (prise de masse uniquement) */}
+            {profile.objectif === "PRISE_MASSE" && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium">
+                  Ratio protéines pour prise de masse *
+                </label>
+                <div className="flex gap-4">
+                  {[2.0, 2.5, 3.0].map((ratio) => (
+                    <label
+                      key={ratio}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="protein-ratio"
+                        className="w-4 h-4"
+                        checked={
+                          (profile.preferences_nutritionnelles
+                            ?.ratio_proteines_prise_masse || 2.0) === ratio
+                        }
+                        onChange={() =>
+                          updateProfile({
+                            preferences_nutritionnelles: {
+                              ...profile.preferences_nutritionnelles,
+                              ratio_proteines_prise_masse: ratio as 2.0 | 2.5 | 3.0,
+                            },
+                          })
+                        }
+                      />
+                      <span className="font-medium">{ratio} g/kg</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  💡 Ratio de protéines par kg de poids corporel. 2.0 g/kg est
+                  recommandé pour la majorité, 2.5-3.0 g/kg pour une prise de masse
+                  intensive.
+                  {valeurs && (
+                    <span className="block mt-1 font-medium">
+                      → Objectif actuel : {valeurs.macros_quotidiens.proteines_g}g/jour
+                      ({(
+                        (profile.preferences_nutritionnelles
+                          ?.ratio_proteines_prise_masse || 2.0) *
+                        profile.poids_kg
+                      ).toFixed(0)}
+                      g)
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Fibres */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
+                Objectif fibres par jour *
+              </label>
+              <div className="flex gap-4">
+                {[30, 40, 50].map((fibres) => (
+                  <label
+                    key={fibres}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="fiber-target"
+                      className="w-4 h-4"
+                      checked={
+                        (profile.preferences_nutritionnelles
+                          ?.objectif_fibres_g_jour || 30) === fibres
+                      }
+                      onChange={() =>
+                        updateProfile({
+                          preferences_nutritionnelles: {
+                            ...profile.preferences_nutritionnelles,
+                            objectif_fibres_g_jour: fibres as 30 | 40 | 50,
+                          },
+                        })
+                      }
+                    />
+                    <span className="font-medium">{fibres}g</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 L'objectif recommandé est 30g/jour. 40-50g peut améliorer la
+                satiété et le contrôle glycémique.
+              </p>
+              {(profile.preferences_nutritionnelles?.objectif_fibres_g_jour ||
+                30) >= 50 && (
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    ⚠️ 50g de fibres par jour : Augmentez progressivement
+                    l'apport en fibres et assurez-vous de boire au moins 2-3L
+                    d'eau par jour pour éviter les ballonnements et l'inconfort
+                    digestif.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Index glycémique cible */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
+                Index glycémique cible maximum (optionnel)
+              </label>
+              <div className="flex items-center gap-4">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={
+                    profile.preferences_nutritionnelles?.ig_cible_max || ""
+                  }
+                  onChange={(e) =>
+                    updateProfile({
+                      preferences_nutritionnelles: {
+                        ...profile.preferences_nutritionnelles,
+                        ig_cible_max: e.target.value
+                          ? parseInt(e.target.value)
+                          : undefined,
+                      },
+                    })
+                  }
+                  placeholder={
+                    profile.contraintes_sante.diabete ? "55" : "70"
+                  }
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {profile.contraintes_sante.diabete
+                    ? "Défaut : 55 (diabète)"
+                    : "Défaut : 70 (pas de contrainte)"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 L'index glycémique mesure l'impact d'un aliment sur la
+                glycémie. IG bas (&lt;55) recommandé pour diabète et contrôle du
+                poids. Laissez vide pour utiliser la valeur par défaut.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Suivi des triglycérides (si chylomicronémie) */}
         {profile.contraintes_sante.chylomicronemie && (
           <Card className={valeurs?.zone_tg ? ZONES_TG[valeurs.zone_tg].border_color : ""}>
