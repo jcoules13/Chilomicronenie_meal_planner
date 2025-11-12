@@ -124,23 +124,55 @@ function parseRepasVariantes(
 ): RecipeTemplate[] {
   const templates: RecipeTemplate[] = [];
 
-  // Chercher le repas
-  const repasRegex = numeroRepas === 1
-    ? /## 🍽️ REPAS 1[\s\S]+?(?=## 🥣 REPAS 2|$)/
-    : /## 🥣 REPAS 2[\s\S]+?(?=## |$)/;
+  // Chercher le repas - plusieurs formats possibles
+  let repasMatch: RegExpMatchArray | null = null;
 
-  const repasMatch = content.match(repasRegex);
-  if (!repasMatch) return [];
+  // Format 1: ## 🍽️ REPAS 1 - 11h00
+  // Stop at next top-level ## heading (not ###)
+  if (!repasMatch && numeroRepas === 1) {
+    repasMatch = content.match(/## 🍽️ REPAS 1[^\n]*\n[\s\S]+?(?=\n## [^#]|$)/);
+  } else if (!repasMatch && numeroRepas === 2) {
+    repasMatch = content.match(/## 🥣 REPAS 2[^\n]*\n[\s\S]+?(?=\n## [^#]|$)/);
+  }
+
+  // Format 2: ### REPAS 1 - 11h00
+  if (!repasMatch && numeroRepas === 1) {
+    repasMatch = content.match(/###\s+REPAS 1[\s\S]+?(?=###\s+REPAS 2|## |$)/i);
+  } else if (!repasMatch && numeroRepas === 2) {
+    repasMatch = content.match(/###\s+REPAS 2[\s\S]+?(?=## |###\s+(?!REPAS)|$)/i);
+  }
+
+  if (!repasMatch) {
+    console.warn(`    ⚠️  Section REPAS ${numeroRepas} non trouvée`);
+    return [];
+  }
 
   const repasContent = repasMatch[0];
 
-  // Extraire la protéine principale
-  const proteineMatch = repasContent.match(/\*\*(.+?):\s*(\d+)g\*\*/);
-  if (!proteineMatch) return [];
+  // Extraire la protéine principale - plusieurs formats possibles
+  let proteineMatch = repasContent.match(/\*\*(.+?):\s*(\d+)g\*\*/);
+
+  // Format alternatif : tableau "| Poulet sans peau | 200g CRU |"
+  if (!proteineMatch) {
+    proteineMatch = repasContent.match(/\|\s*([^|]+(?:poulet|dinde|bœuf|boeuf|cabillaud|colin|lieu|sole|saumon|thon)[^|]*)\s*\|\s*(\d+)g\s*CRU/i);
+  }
+
+  // Format alternatif 2: liste avec tiret "- Blanc de poulet : 200g"
+  if (!proteineMatch) {
+    proteineMatch = repasContent.match(/-\s*(.+?(?:poulet|dinde|bœuf|boeuf|cabillaud|colin|lieu|sole|saumon|thon)[^:]*)\s*:\s*(\d+)g/i);
+  }
+
+  if (!proteineMatch) {
+    console.warn(`    ⚠️  Protéine non détectée dans repas ${numeroRepas}`);
+    return [];
+  }
 
   const [, nomProteine, quantiteProteine] = proteineMatch;
-  const codeProteine = getCodeCiqualProteine(nomProteine);
-  if (!codeProteine) return [];
+  const codeProteine = getCodeCiqualProteine(nomProteine.trim());
+  if (!codeProteine) {
+    console.warn(`    ⚠️  Code CIQUAL non trouvé pour: ${nomProteine.trim()}`);
+    return [];
+  }
 
   // Extraire le féculent
   const feculentMatch = repasContent.match(/\*\*Poids SEC\s*:\s*(\d+)g\*\*/i);
@@ -372,8 +404,9 @@ function parseSoupesFile(filePath: string): RecipeTemplate[] {
   let soupeNum = 1;
 
   for (const { key, saison, emoji } of saisons) {
-    // Extraire la section de cette saison - chercher juste le mot clé
-    const saisonRegex = new RegExp(`## .+ ${key}[\\s\\S]+?(?=## .+(?:HIVER|PRINTEMPS|ÉTÉ|AUTOMNE|📊|💡|⚠️)|$)`, 'i');
+    // Extraire la section de cette saison
+    // Stop at next ## heading (but not ### subsections)
+    const saisonRegex = new RegExp(`##\\s*${emoji}\\s*${key}[^\\n]*\\n[\\s\\S]+?(?=\\n##\\s+[^#]|$)`, 'i');
     const saisonMatch = content.match(saisonRegex);
 
     if (!saisonMatch) {
